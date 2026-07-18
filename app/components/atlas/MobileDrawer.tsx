@@ -144,7 +144,7 @@ export function MobileDrawer({
           stiffness: 280,
           mass: 0.8,
         }}
-        className="md:hidden fixed inset-x-0 bottom-0 z-101 flex flex-col border-t border-line bg-paper/96 shadow-[0_-8px_32px_rgba(0,0,0,0.15),0_-1px_4px_rgba(0,0,0,0.05)] backdrop-blur-xl rounded-t-[22px] overflow-hidden select-none mobile-drawer-sheet"
+        className="md:hidden fixed inset-x-0 top-0 z-101 flex flex-col border-t border-line bg-paper/96 shadow-[0_-8px_32px_rgba(0,0,0,0.15),0_-1px_4px_rgba(0,0,0,0.05)] backdrop-blur-xl rounded-t-[22px] overflow-hidden select-none mobile-drawer-sheet"
         style={{
           y,
           height: `calc(100vh - ${expandedY}px)`,
@@ -230,7 +230,7 @@ export function MobileDrawer({
 
         {/* Scrollable Body Content */}
         <div
-          className={`flex-1 overflow-y-auto px-5 py-4 custom-scrollbar select-text overscroll-contain ${activeState === "expanded" ? "overflow-y-auto" : "overflow-hidden"
+          className={`flex-1 overflow-y-auto px-5 pt-4 pb-12 custom-scrollbar select-text overscroll-contain ${activeState === "expanded" ? "overflow-y-auto" : "overflow-hidden"
             }`}
         >
           {children}

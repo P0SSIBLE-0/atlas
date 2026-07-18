@@ -783,11 +783,11 @@ export async function loadCountryDossierProgressive(
   const [geoPlaces, relatedOfficial] = await Promise.all([
     lat != null && lng != null
       ? withTimeout(
-          getPlacesNear(lat, lng, signal, { limit: 8, radiusMeters: 120_000 }),
-          3000,
-          [],
-          signal,
-        )
+        getPlacesNear(lat, lng, signal, { limit: 8, radiusMeters: 120_000 }),
+        3000,
+        [],
+        signal,
+      )
       : Promise.resolve([] as AtlasPlace[]),
     searchName.toLowerCase() !== countryName.toLowerCase()
       ? withTimeout(fetchWikipediaRelated(searchName, signal), 2500, related, signal)

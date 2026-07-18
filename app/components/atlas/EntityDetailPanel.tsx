@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { motion, type Variants } from "motion/react";
 import {
   ArrowLeft,
@@ -34,15 +33,6 @@ export function EntityDetailPanel({
   onBack,
   onClose,
 }: EntityDetailPanelProps) {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
-
   const years =
     entity.yearStart && entity.yearEnd
       ? `${entity.yearStart} – ${entity.yearEnd}`
