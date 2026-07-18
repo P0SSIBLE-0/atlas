@@ -213,16 +213,16 @@ export default function AtlasExplorer() {
         const pool: Locatable[] = selectedPlace
           ? [...placePeople, ...placeEvents, ...relatedPlaces]
           : [
-              ...people,
-              ...events,
-              ...empires,
-              ...places.map((p) => ({
-                id: p.id,
-                label: p.title,
-                latitude: p.latitude,
-                longitude: p.longitude,
-              })),
-            ];
+            ...people,
+            ...events,
+            ...empires,
+            ...places.map((p) => ({
+              id: p.id,
+              label: p.title,
+              latitude: p.latitude,
+              longitude: p.longitude,
+            })),
+          ];
         const match = pool.find((item) => item.id === entry.id || item.label === entry.label);
         if (match?.latitude != null && match.longitude != null) {
           mapHandle.current?.flyToPoint(match.longitude, match.latitude, selectedPlace ? 11 : 6.5);
@@ -517,15 +517,11 @@ export default function AtlasExplorer() {
         />
 
         {depth === "world" ? (
-          <div className="absolute z-12 left-[3.5vw] bottom-7 flex items-center gap-2.25 text-ink text-xs font-body p-[8px_12px] bg-paper/78 border border-ink/12 rounded-theme shadow-[0_4px_10px_rgba(0,0,0,0.06)]">
-            <span className="w-1.75 h-1.75 rounded-full bg-gold shadow-[0_0_0_4px_rgba(255,239,187,0.4)] animate-pulse" />
+          <div className="absolute min-w-[220px] z-12 left-1/2 -translate-x-1/2 bottom-7 flex items-center gap-2.25 text-ink text-xs font-body px-2 py-1.5 bg-paper/38 border border-ink/12 rounded-theme shadow-[0_4px_10px_rgba(0,0,0,0.06)]">
+            <span className="size-1.75 rounded-full bg-gold shadow-[0_0_0_4px_rgba(255,239,187,0.4)] animate-pulse" />
             <p className="m-0">Click any country to explore its history</p>
           </div>
         ) : null}
-
-        <div className="absolute z-12 right-3 bottom-2.5 text-ink/65 text-[9px] tracking-[0.04em] bg-paper/55 p-[3px_7px] max-md:hidden">
-          MapLibre · REST Countries · Wikipedia · Wikidata · Open boundaries
-        </div>
       </div>
 
 

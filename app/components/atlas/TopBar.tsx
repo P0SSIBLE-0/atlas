@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import type { Theme } from "../../lib/types";
 
 type TopBarProps = {
@@ -13,10 +14,14 @@ type TopBarProps = {
 export function TopBar({ theme, onThemeChange, onHome, depth, label }: TopBarProps) {
   return (
     <header className="absolute top-0 left-0 right-0 z-20 max-w-[360px] md:max-w-3xl mx-auto my-2 rounded-full h-(--topbar-h) px-2 md:px-5 flex items-center justify-between gap-4 border-b border-line bg-linear-to-b from-paper/47 to-paper/35 backdrop-blur-md">
-      <button className="flex items-baseline gap-2.5 text-ink border-0 bg-transparent tracking-[0.22em] font-bold text-base md:text-lg font-logo shrink-0 cursor-pointer" onClick={onHome} aria-label="Return to world map">
-        <span className="text-gold text-[22px] tracking-normal">✦</span>
-        <span>ATLAS</span>
-        <em className="text-muted font-ui font-semibold text-[9px] tracking-[0.16em] uppercase not-italic max-sm:hidden">HISTORY, PLACED</em>
+      <button className="flex items-center gap-2 px-2 text-ink border-0 bg-transparent tracking-[0.22em] font-bold text-sm md:text-lg font-logo shrink-0 cursor-pointer" onClick={onHome} aria-label="Return to world map">
+        <span className="relative w-7 h-7 shrink-0 overflow-hidden">
+          <Image src="/logo.png" alt="Atlas logo" fill className="object-contain scale-125" priority />
+        </span>
+        <span className="flex items-baseline gap-2">
+          <span>ATLAS</span>
+          <em className="text-muted font-ui font-semibold text-[9px] tracking-[0.16em] uppercase not-italic max-sm:hidden">HISTORY, PLACED</em>
+        </span>
       </button>
 
       <div className="flex items-center justify-center gap-2 min-w-0 text-muted text-[10px] tracking-[0.08em] uppercase max-md:hidden font-ui" aria-live="polite">
@@ -52,8 +57,8 @@ export function TopBar({ theme, onThemeChange, onHome, depth, label }: TopBarPro
           </select>
         </label>
         {depth !== "world" ? (
-          <button className="border border-ink rounded-full! py-2 px-3 bg-ink text-paper text-sm font-bold cursor-pointer hover:opacity-90 transition-opacity flex items-center font-ui" type="button" onClick={onHome}>
-            Zoom out <span className="ml-2 text-gold text-sm">↖</span>
+          <button className="border border-ink rounded-full! py-1.5 px-2 bg-ink text-paper text-xs font-bold cursor-pointer hover:opacity-90 transition-opacity flex items-center font-ui" type="button" onClick={onHome}>
+            Zoom out <span className="ml-2 text-gold">↖</span>
           </button>
         ) : null}
       </div>

@@ -24,7 +24,7 @@
 .DS_Store
 *.pem
 .agents
-# PRD.md
+PRD.md
 
 # debug
 npm-debug.log*

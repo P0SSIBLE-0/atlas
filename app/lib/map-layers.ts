@@ -13,6 +13,11 @@ export const WORLD_VIEW = {
 } as const;
 
 export function getMapStyle(theme: Theme): any {
+  // Minimal theme uses Carto Positron directly
+  if (theme === "minimal") {
+    return "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
+  }
+
   let oceanColor = "#D8F2FF";
   let landColor = "#FFFFFF";
   let coastlineColor = "#198EC8";
@@ -28,7 +33,7 @@ export function getMapStyle(theme: Theme): any {
   let geolineHaloColor = "rgba(255, 255, 255, 1)";
 
   if (theme === "vintage") {
-    oceanColor = "#9bb2af"; // Faded vintage teal ocean for clear land/ocean contrast
+    oceanColor = "#9bb2af"; // Faded vintage teal ocean
     landColor = "#f5ebd3"; // Soft parchment cream land
     coastlineColor = "#857053"; // Sketchy sepia coastline
     boundaryColor = "rgba(133, 112, 83, 0.45)"; // Soft sepia boundaries
@@ -40,19 +45,6 @@ export function getMapStyle(theme: Theme): any {
     geolineColor = "#857053"; // Sepia lines
     geolineOpacity = 0.28;
     geolineHaloColor = "#ecdcb9"; // Halo matches ocean color
-  } else if (theme === "minimal") {
-    oceanColor = "#edf0ee"; // Pale grey water
-    landColor = "#f8f9f8"; // Pure clean white land
-    coastlineColor = "#a4b3ad"; // Muted grey-green coastline
-    boundaryColor = "rgba(164, 179, 173, 0.35)";
-    boundaryWidth = 0.6;
-
-    labelColor = "#4a5550"; // Clean slate grey text
-    labelHaloColor = "#f8f9f8";
-
-    geolineColor = "#a4b3ad";
-    geolineOpacity = 0.18;
-    geolineHaloColor = "#edf0ee";
   } else if (theme === "modern") {
     oceanColor = "#6687ad"; // Rich slate blue ocean
     landColor = "#f2f5ff"; // Bright cool white-blue land
@@ -73,6 +65,10 @@ export function getMapStyle(theme: Theme): any {
     name: `Atlas-${theme}`,
     glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
     sources: {
+      carto: {
+        type: "vector",
+        url: "https://tiles.basemaps.cartocdn.com/vector/carto.streets/v1/tiles.json"
+      },
       maplibre: {
         type: "vector",
         tiles: ["https://demotiles.maplibre.org/tiles/{z}/{x}/{y}.pbf"],
@@ -84,37 +80,38 @@ export function getMapStyle(theme: Theme): any {
         id: "background",
         type: "background",
         paint: {
-          "background-color": oceanColor,
+          "background-color": landColor,
         },
       },
       {
-        id: "countries-fill",
+        id: "water-fill",
         type: "fill",
-        source: "maplibre",
-        "source-layer": "countries",
+        source: "carto",
+        "source-layer": "water",
         paint: {
-          "fill-color": landColor,
+          "fill-color": oceanColor,
         },
       },
       {
         id: "coastline",
         type: "line",
-        source: "maplibre",
-        "source-layer": "countries",
+        source: "carto",
+        "source-layer": "water",
         layout: {
           "line-cap": "round",
           "line-join": "round",
         },
         paint: {
           "line-color": coastlineColor,
-          "line-width": theme === "vintage" ? 1.5 : 1.0,
+          "line-width": theme === "vintage" ? 1.2 : 0.8,
         },
       },
       {
-        id: "countries-boundary",
+        id: "admin-boundaries",
         type: "line",
-        source: "maplibre",
-        "source-layer": "countries",
+        source: "carto",
+        "source-layer": "boundary",
+        filter: ["all", ["==", "admin_level", 2], ["==", "maritime", 0]],
         paint: {
           "line-color": boundaryColor,
           "line-width": boundaryWidth,
@@ -157,53 +154,55 @@ export function getMapStyle(theme: Theme): any {
           "text-halo-width": 1,
         },
       },
+      // Country labels layer
       {
-        id: "countries-label",
+        id: "country-labels",
         type: "symbol",
-        source: "maplibre",
-        "source-layer": "centroids",
+        source: "carto",
+        "source-layer": "place",
         minzoom: 2,
-        maxzoom: 24,
-        filter: ["all"],
+        maxzoom: 6,
+        filter: ["all", ["==", "class", "country"]],
         layout: {
           "text-font": ["Open Sans Semibold"],
           "text-size": {
             stops: [
               [2, 10],
-              [4, 12],
-              [6, 15],
+              [5, 14],
             ],
           },
-          "text-field": {
-            stops: [
-              [2, "{ABBREV}"],
-              [4, "{NAME}"],
-            ],
-          },
-          "visibility": "visible",
-          "text-max-width": 10,
-          "text-transform": {
-            stops: [
-              [0, "uppercase"],
-              [2, "none"],
-            ],
-          },
+          "text-field": "{name:en}",
+          "text-transform": "uppercase",
         },
         paint: {
           "text-color": labelColor,
-          "text-halo-blur": {
-            stops: [
-              [2, 0.2],
-              [6, 0],
-            ],
-          },
           "text-halo-color": labelHaloColor,
-          "text-halo-width": {
+          "text-halo-width": 2,
+        },
+      },
+      // City labels layer (zoomed-in cities)
+      {
+        id: "city-labels",
+        type: "symbol",
+        source: "carto",
+        "source-layer": "place",
+        minzoom: 4,
+        filter: ["all", ["==", "class", "city"]],
+        layout: {
+          "text-font": ["Open Sans Semibold"],
+          "text-size": {
             stops: [
-              [2, 1],
-              [6, 1.5],
+              [4, 9],
+              [8, 13],
             ],
           },
+          "text-field": "{name:en}",
+          "text-max-width": 8,
+        },
+        paint: {
+          "text-color": labelColor,
+          "text-halo-color": labelHaloColor,
+          "text-halo-width": 1.5,
         },
       },
     ],
@@ -258,6 +257,31 @@ export function getCountryLine(theme: Theme): Omit<LineLayerSpecification, "sour
       "line-color": lineColor,
       "line-width": lineWidth,
       "line-opacity": opacity,
+    },
+  };
+}
+
+export function getHoverCountryFill(theme: Theme): Omit<FillLayerSpecification, "source"> {
+  let fillColor = "#d5a85b";
+  let hoverOpacity = 0.32;
+
+  if (theme === "vintage") {
+    fillColor = "#c49a3c";
+    hoverOpacity = 0.28;
+  } else if (theme === "minimal") {
+    fillColor = "#3a8c86";
+    hoverOpacity = 0.20;
+  } else if (theme === "modern") {
+    fillColor = "#e26a4c";
+    hoverOpacity = 0.22;
+  }
+
+  return {
+    id: "atlas-hover-country",
+    type: "fill",
+    paint: {
+      "fill-color": fillColor,
+      "fill-opacity": ["case", ["boolean", ["feature-state", "hover"], false], hoverOpacity, 0],
     },
   };
 }

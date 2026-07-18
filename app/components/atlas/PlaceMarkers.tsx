@@ -30,7 +30,7 @@ export function PlaceMarkers({ places, selectedId, visible, onSelect }: PlaceMar
           >
             <button
               type="button"
-              className={`map-place-marker ${selected ? "is-selected" : ""} marker-enter`}
+              className={`map-place-marker ${selected ? "is-selected" : ""} marker-enter max-w-[250px]`}
               style={{ animationDelay: `${Math.min(index, 8) * 20}ms` }}
               aria-label={`Open ${place.title}`}
             >

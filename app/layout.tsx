@@ -81,7 +81,26 @@ const inter = Inter({
 });
 export const metadata: Metadata = {
   title: "Atlas — History, Placed",
-  description: "A geography-first history explorer.",
+  description: "Explore the world's history through an interactive map. Discover civilizations, empires, legendary figures, and historical events connected across time.",
+  openGraph: {
+    title: "Atlas — History, Placed",
+    description: "Explore the world's history through an interactive map. Discover civilizations, empires, legendary figures, and historical events connected across time.",
+    images: [
+      {
+        url: "/og_image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Atlas — History, Placed",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Atlas — History, Placed",
+    description: "Explore the world's history through an interactive map. Discover civilizations, empires, legendary figures, and historical events connected across time.",
+    images: ["/og_image.jpg"],
+  },
 };
 export default function RootLayout({
   children,

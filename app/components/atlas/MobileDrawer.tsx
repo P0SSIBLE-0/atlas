@@ -37,7 +37,7 @@ export function MobileDrawer({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const expandedY = windowHeight * 0.10; // Snap fully open at 10% from the top
+  const expandedY = windowHeight * 0.06; // Snap fully open at 6% from the top
   const peekY = windowHeight * 0.52; // Snap peek at 52% from the top (~48% height)
   const closedY = windowHeight; // Snap closed when pushed completely off screen
 
@@ -156,7 +156,7 @@ export function MobileDrawer({
 
         {/* Grab Handle & Navigation Header */}
         <motion.div
-          className="shrink-0 flex flex-col pb-3.5 pt-2 bg-paper/98 border-b border-line cursor-grab active:cursor-grabbing touch-none select-none relative z-10"
+          className="shrink-0 flex flex-col pb-3.5 pt-2 bg-paper/98 border-b border-line cursor-grab touch-none select-none relative z-10"
           onPointerDown={(e) => dragControls.start(e)}
           onTap={() => {
             if (!isDragging.current) {
@@ -183,7 +183,7 @@ export function MobileDrawer({
           </div>
 
           {/* Navigation Action Row */}
-          <div className="px-5 flex justify-between items-center text-muted text-[10px] font-bold tracking-[0.14em] uppercase font-ui font-bold">
+          <div className="px-5 flex justify-between items-center text-muted text-[10px] tracking-[0.14em] uppercase font-ui font-bold">
             {onBack ? (
               <button
                 type="button"
@@ -201,14 +201,14 @@ export function MobileDrawer({
             )}
             <button
               type="button"
-              className="inline-flex items-center justify-center border-0 bg-transparent text-muted hover:text-ink w-6 h-6 rounded-full hover:bg-line/20 cursor-pointer transition-all duration-200"
+              className="inline-flex items-center justify-center border-0 bg-transparent text-muted hover:text-ink w-6 h-6 rounded-full hover:bg-line/20 cursor-pointer transition-all duration-200 absolute top-3 right-3"
               onClick={(e) => {
                 e.stopPropagation();
                 onClose();
               }}
               aria-label="Close details"
             >
-              <X className="w-4 h-4" />
+              <X className="size-4.5" />
             </button>
           </div>
 

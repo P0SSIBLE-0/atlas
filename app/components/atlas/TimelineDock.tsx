@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowRight } from "lucide-react";
 import { ERA_PERIODS, yearFromTimeline } from "../../lib/timeline";
 import type { TimelineEntry } from "../../lib/types";
 
@@ -32,7 +33,7 @@ export function TimelineDock({
       initial={{ opacity: 0, y: 24 }}
       animate={visible ? { opacity: 1, y: 0, pointerEvents: "auto" } : { opacity: 0, y: 16, pointerEvents: "none" }}
       transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-      className="absolute rounded-theme z-15 left-0 right-0 mx-auto bottom-[18px] w-[min(720px,calc(100%-32px))] grid grid-cols-[100px_1fr_minmax(120px,180px)] max-md:grid-cols-[80px_1fr] max-md:bottom-3 items-center gap-4 p-[14px_18px] border border-line bg-paper/45 shadow-[0_10px_28px_rgba(38,50,42,0.16)] backdrop-blur-md"
+      className="timeline-dock absolute rounded-theme z-15 left-0 right-0 mx-auto bottom-[18px] w-[min(720px,calc(100%-32px))] grid grid-cols-[100px_1fr_minmax(120px,180px)] max-md:grid-cols-[80px_1fr] max-md:bottom-3 items-center gap-4 p-[14px_18px] border border-line bg-paper shadow-[0_10px_28px_rgba(38,50,42,0.16)]"
       aria-label="Historical timeline"
     >
       <div className="flex flex-col">
@@ -54,6 +55,7 @@ export function TimelineDock({
         {hasHistory ? (
           <button
             type="button"
+            title={activeEntry?.label ?? "Moment"}
             className="flex items-center gap-1 w-full mt-1.5 p-[6px_8px] border border-line bg-white/75 text-muted text-[11px] leading-[1.4] font-body text-left whitespace-nowrap overflow-hidden text-ellipsis rounded-theme transition-all duration-120 ease hover:not-disabled:border-gold/55 hover:not-disabled:-translate-y-[1px] hover:not-disabled:cursor-pointer disabled:opacity-50"
             onClick={() => activeEntry && onSelectEntry?.(activeEntry)}
             disabled={!activeEntry}
@@ -64,7 +66,9 @@ export function TimelineDock({
             ) : (
               <span className="overflow-hidden text-ellipsis"> — open this moment</span>
             )}
-            <em className="ml-auto text-gold not-italic shrink-0">→</em>
+            <em className="ml-auto text-gold not-italic shrink-0">
+              <ArrowRight className="size-3" />
+            </em>
           </button>
         ) : (
           <div className="flex justify-between gap-0.5">
@@ -73,7 +77,7 @@ export function TimelineDock({
                 key={period.label}
                 type="button"
                 onClick={() => onChange(index)}
-                className={`pt-1 border-0 bg-transparent text-[9px] cursor-pointer transition-colors duration-150 ${index === safeIndex ? "text-ink font-bold" : "text-muted hover:text-ink"}`}
+                className={` px-2 border-0 bg-transparent text-[9px] cursor-pointer transition-colors duration-150 ${index === safeIndex ? "text-ink font-bold" : "text-muted hover:text-ink"}`}
               >
                 {period.label}
               </button>

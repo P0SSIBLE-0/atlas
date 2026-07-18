@@ -1,6 +1,7 @@
 "use client";
 
 import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef } from "react";
+import type { MapGeoJSONFeature } from "maplibre-gl";
 import type { MapLayerMouseEvent, MapRef } from "react-map-gl/maplibre";
 import Map, { Layer, NavigationControl, Source, Marker } from "react-map-gl/maplibre";
 import { boundsFromGeometry, centerFromBounds } from "../../lib/geo";
@@ -10,6 +11,7 @@ import {
   getCountryFill,
   getCountryLine,
   getGraticulesGeoJSON,
+  getHoverCountryFill,
   getMapStyle,
   getSelectedCountryFill,
   getRhumbLinesGeoJSON,
@@ -149,6 +151,7 @@ export const AtlasMap = forwardRef<AtlasMapHandle, AtlasMapProps>(function Atlas
   ref,
 ) {
   const mapRef = useRef<MapRef>(null);
+  const hoveredFeatureId = useRef<string | number | null>(null);
 
   useImperativeHandle(ref, () => ({
     flyToWorld() {
@@ -195,12 +198,43 @@ export const AtlasMap = forwardRef<AtlasMapHandle, AtlasMapProps>(function Atlas
     [onCountrySelect],
   );
 
+  const handleMouseMove = useCallback((event: MapLayerMouseEvent) => {
+    const map = mapRef.current?.getMap();
+    if (!map) return;
+    const feature: MapGeoJSONFeature | undefined = event.features?.[0];
+    if (feature?.id !== undefined && feature.id !== hoveredFeatureId.current) {
+      // Clear previous
+      if (hoveredFeatureId.current !== null) {
+        map.setFeatureState(
+          { source: "atlas-country-boundaries", id: hoveredFeatureId.current },
+          { hover: false },
+        );
+      }
+      hoveredFeatureId.current = feature.id;
+      map.setFeatureState(
+        { source: "atlas-country-boundaries", id: feature.id },
+        { hover: true },
+      );
+    }
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    const map = mapRef.current?.getMap();
+    if (!map || hoveredFeatureId.current === null) return;
+    map.setFeatureState(
+      { source: "atlas-country-boundaries", id: hoveredFeatureId.current },
+      { hover: false },
+    );
+    hoveredFeatureId.current = null;
+  }, []);
+
   const styleObj = useMemo(() => getMapStyle(theme), [theme]);
   const graticulesData = useMemo(() => getGraticulesGeoJSON(), []);
   const rhumbLinesData = useMemo(() => getRhumbLinesGeoJSON(), []);
 
   const countryFillObj = useMemo(() => getCountryFill(theme), [theme]);
   const countryLineObj = useMemo(() => getCountryLine(theme), [theme]);
+  const hoverCountryFillObj = useMemo(() => getHoverCountryFill(theme), [theme]);
   const selectedCountryFillObj = useMemo(
     () => getSelectedCountryFill(selectedCountryName, theme),
     [selectedCountryName, theme],
@@ -211,8 +245,10 @@ export const AtlasMap = forwardRef<AtlasMapHandle, AtlasMapProps>(function Atlas
       ref={mapRef}
       initialViewState={WORLD_VIEW}
       mapStyle={styleObj}
-      interactiveLayerIds={["atlas-countries-fill"]}
+      interactiveLayerIds={["atlas-countries-fill", "atlas-hover-country"]}
       onClick={handleClick}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
       onLoad={() => onMapReady?.()}
       cursor="pointer"
       attributionControl={false}
@@ -252,8 +288,9 @@ export const AtlasMap = forwardRef<AtlasMapHandle, AtlasMapProps>(function Atlas
         </Source>
       )}
 
-      <Source id="atlas-country-boundaries" type="geojson" data={COUNTRY_SOURCE_URL}>
+      <Source id="atlas-country-boundaries" type="geojson" data={COUNTRY_SOURCE_URL} generateId>
         <Layer {...countryFillObj} />
+        <Layer {...hoverCountryFillObj} />
         <Layer {...countryLineObj} />
         {selectedCountryName ? <Layer {...selectedCountryFillObj} /> : null}
       </Source>
