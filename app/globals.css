@@ -1,26 +1,508 @@
 @import "tailwindcss";
 
+@theme {
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-paper: var(--paper);
+  --color-paper-deep: var(--paper-deep);
+  --color-line: var(--line);
+  --color-gold: var(--gold);
+  --color-map: var(--map);
+  --color-water: var(--water);
+
+  /* Semantic Theme Fonts */
+  --font-logo: var(--font-logo-val);
+  --font-heading: var(--font-heading-val);
+  --font-section: var(--font-section-val);
+  --font-body: var(--font-body-val);
+  --font-dates: var(--font-dates-val);
+  --font-ui: var(--font-ui-val);
+
+  /* Override standard fallback so that components using font-serif get the body font */
+  --font-serif: var(--font-body-val), Georgia, serif;
+
+  /* Theme radius */
+  --radius-theme: var(--radius-val);
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in: cubic-bezier(0.55, 0, 1, 0.45);
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --panel-w: min(400px, calc(100vw - 28px));
+  --topbar-h: 55px;
+
+  /* Default theme fallbacks */
+  --ink: #26322a;
+  --muted: #718071;
+  --paper: #f0ead8;
+  --paper-deep: #e6ddc7;
+  --line: rgba(49, 65, 52, 0.18);
+  --gold: #b87a2c;
+  --map: #b5c5ae;
+  --water: #7ea4a1;
+  --radius-val: 4px;
+
+  --font-logo-val: var(--font-inter), sans-serif;
+  --font-heading-val: var(--font-inter), sans-serif;
+  --font-section-val: var(--font-inter), sans-serif;
+  --font-body-val: var(--font-inter), sans-serif;
+  --font-dates-val: var(--font-inter), sans-serif;
+  --font-ui-val: var(--font-inter), sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@media (max-width: 600px) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --topbar-h: 52px;
   }
 }
 
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  background: var(--paper-deep);
+  color: var(--ink);
+  font-family: var(--font-body-val), sans-serif;
+}
+
+/* ——— Immersive shell and Map stage ——— */
+.atlas-immersive {
+  height: 100vh;
+  height: 100dvh;
+  width: 100%;
+  overflow: hidden;
+  background: var(--paper);
+}
+
+.map-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.map-stage .maplibregl-map {
+  width: 100%;
+  height: 100%;
+}
+
+.map-vignette {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    radial-gradient(ellipse at center, transparent 45%, rgba(28, 36, 30, 0.18) 100%),
+    linear-gradient(180deg, rgba(32, 40, 34, 0.22) 0%, transparent 18%, transparent 78%, rgba(32, 40, 34, 0.16) 100%);
+}
+
+.maplibregl-ctrl-group {
+  border-radius: var(--radius-val) !important;
+  box-shadow: 0 1px 6px rgba(38, 50, 42, 0.25) !important;
+}
+
+.maplibregl-ctrl button {
+  width: 33px !important;
+  height: 33px !important;
+}
+
+/* ——— Themes ——— */
+.theme-minimal {
+  --paper: #f8f9f8;
+  --paper-deep: #edf0ee;
+  --ink: #18271f;
+  --muted: #64736b;
+  --gold: #327e79;
+  --map: #c8dfdb;
+  --water: #8cbfc0;
+  --line: rgba(24, 39, 31, 0.08);
+
+  --font-logo-val: var(--font-manrope), sans-serif;
+  --font-heading-val: var(--font-geist), sans-serif;
+  --font-section-val: var(--font-geist), sans-serif;
+  --font-body-val: var(--font-inter), sans-serif;
+  --font-dates-val: var(--font-ibm-plex-mono), monospace;
+  --font-ui-val: var(--font-inter), sans-serif;
+  --radius-val: 4px;
+}
+
+.theme-modern {
+  --paper: #f2f5ff;
+  --paper-deep: #e3e9f4;
+  --ink: #15213b;
+  --muted: #667492;
+  --gold: #e26a4c;
+  --map: #b7c7df;
+  --water: #6687ad;
+  --line: rgba(21, 33, 59, 0.08);
+
+  --font-logo-val: var(--font-space-grotesk), sans-serif;
+  --font-heading-val: var(--font-sora), sans-serif;
+  --font-section-val: var(--font-space-grotesk), sans-serif;
+  --font-body-val: var(--font-inter), sans-serif;
+  --font-dates-val: var(--font-jetbrains-mono), monospace;
+  --font-ui-val: var(--font-inter), sans-serif;
+  --radius-val: 12px;
+}
+
+.theme-vintage {
+  --paper: #f0ead8;
+  --paper-deep: #e6ddc7;
+  --ink: #26322a;
+  --muted: #718071;
+  --gold: #b87a2c;
+  --map: #b5c5ae;
+  --water: #7ea4a1;
+  --line: rgba(49, 65, 52, 0.18);
+
+  --font-logo-val: var(--font-pirata-one);
+  --font-heading-val: var(--font-pirata-one), serif;
+  --font-section-val: var(--font-cormorant-garamond), serif;
+  --font-body-val: var(--font-eb-garamond), serif;
+  --font-dates-val: var(--font-im-fell-english-sc), serif;
+  --font-ui-val: var(--font-inter), sans-serif;
+  --radius-val: 0px;
+}
+
+/* Core typography overrides per theme */
+.atlas {
+  font-family: var(--font-body-val), sans-serif;
+}
+
+.atlas h1 {
+  font-family: var(--font-heading-val), serif;
+}
+
+/* Border radius defaults */
+.atlas aside {
+  border-radius: var(--radius-val) !important;
+}
+
+.atlas button,
+.atlas select,
+.atlas a {
+  border-radius: var(--radius-val);
+}
+
+@media (max-width: 768px) {
+  .atlas aside {
+    border-radius: var(--radius-val) var(--radius-val) 0 0 !important;
+  }
+}
+
+
+.theme-vintage .maplibregl-canvas {
+  filter: sepia(0.08) contrast(0.97) saturate(1.02);
+}
+
+.theme-vintage .map-vignette {
+  background:
+    radial-gradient(ellipse at center, transparent 40%, rgba(133, 112, 83, 0.28) 100%),
+    linear-gradient(180deg, rgba(92, 77, 57, 0.18) 0%, transparent 16%, transparent 84%, rgba(92, 77, 57, 0.14) 100%);
+  mix-blend-mode: multiply;
+}
+
+.theme-vintage .marker-pin {
+  width: 16px;
+  height: 16px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  position: relative;
+  transform: translate(-1px, -1px);
+}
+
+.theme-vintage .marker-pin::before,
+.theme-vintage .marker-pin::after {
+  content: "";
+  position: absolute;
+  top: 1px;
+  left: 7px;
+  width: 2.2px;
+  height: 14px;
+  background: #b03a2e;
+  /* Pirate red "X" */
+  border-radius: 1px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.theme-vintage .marker-pin::before {
+  transform: rotate(45deg);
+}
+
+.theme-vintage .marker-pin::after {
+  transform: rotate(-45deg);
+}
+
+/* Selected marker in vintage theme */
+.theme-vintage .map-place-marker.is-selected .marker-pin::before,
+.theme-vintage .map-place-marker.is-selected .marker-pin::after {
+  width: 3.5px;
+  height: 17px;
+  left: 6px;
+  background: #cb4335;
+  box-shadow: 0 0 6px rgba(203, 67, 53, 0.4), 0 2px 3px rgba(0, 0, 0, 0.35);
+}
+
+.theme-vintage .map-place-marker b {
+  font-family: Georgia, serif;
+  font-style: italic;
+  color: #5c4a37;
+  background: rgba(247, 242, 228, 0.92);
+  border: 1px solid rgba(133, 112, 83, 0.4);
+  box-shadow: 1px 2px 4px rgba(92, 74, 55, 0.12);
+  border-radius: 1px;
+  font-weight: 600;
+}
+
+.compass-rose-container {
+  transition: transform 0.4s ease;
+  filter: drop-shadow(2px 3px 5px rgba(92, 70, 47, 0.25));
+}
+
+.compass-rose-container:hover {
+  transform: rotate(5deg) scale(1.05);
+}
+
+.sailing-ship-container {
+  animation: boat-sway 6s ease-in-out infinite alternate;
+  filter: drop-shadow(1px 2px 4px rgba(92, 70, 47, 0.18));
+}
+
+@keyframes boat-sway {
+  0% {
+    transform: rotate(-3deg) translateY(0px) translateX(0px);
+  }
+
+  50% {
+    transform: rotate(1deg) translateY(-1px) translateX(1px);
+  }
+
+  100% {
+    transform: rotate(-1deg) translateY(1px) translateX(-2px);
+  }
+}
+
+.ocean-label {
+  font-family: Georgia, serif;
+  font-size: 15px;
+  font-weight: bold;
+  letter-spacing: 0.38em;
+  color: #857053;
+  opacity: 0.28;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
+  transform: rotate(-10deg);
+  pointer-events: none;
+}
+
+.sea-monster-container {
+  animation: serpent-bob 7s ease-in-out infinite alternate;
+  filter: drop-shadow(1px 2px 3px rgba(92, 70, 47, 0.16));
+}
+
+@keyframes serpent-bob {
+  0% {
+    transform: translateY(0px) rotate(0deg) scale(1);
+  }
+
+  50% {
+    transform: translateY(2px) rotate(1deg) scale(1.02);
+  }
+
+  100% {
+    transform: translateY(-1px) rotate(-1deg) scale(0.99);
+  }
+}
+
+/* Shimmer animation keyframes for skeletons */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -100px 0;
+  }
+
+  100% {
+    background-position: 150px 0;
+  }
+}
+
+.animate-shimmer {
+  background-size: 250px 100%;
+  animation: skeleton-shimmer 1.4s infinite linear;
+}
+
+/* Custom scrollbar utility class */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--gold);
+  border: 1px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Firefox support */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+
+/* Vintage Theme overrides: Remove Glassmorphism and apply solid aged parchment pirate map style */
+.theme-vintage header,
+.theme-vintage aside,
+.theme-vintage .mobile-drawer-sheet {
+  /* Vintage parchment paper aged gradient vignette */
+  background: radial-gradient(circle at 50% 28%, #f7f2e5 0%, #ecdcb9 100%) !important;
+  border: 2px solid #735d44 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-radius: 0px !important;
+  /* 18th-century double-frame outline: border + inset shadow line */
+  box-shadow: 
+    inset 0 0 0 4px #f5ebd3, 
+    inset 0 0 0 5px #857053, 
+    3px 8px 32px rgba(44, 35, 23, 0.28) !important;
+}
+
+/* Make mobile drawer sheet inner header scroll container transparent to respect the gradient */
+.theme-vintage .mobile-drawer-sheet > div {
+  background: transparent !important;
+  border-bottom: 2px dashed rgba(133, 112, 83, 0.4) !important;
+}
+
+/* Custom drag handle line for vintage (straight sketch line instead of modern pill) */
+.theme-vintage .mobile-drawer-sheet [class*="bg-ink/15"] {
+  background: #857053 !important;
+  border-radius: 0px !important;
+  height: 2px !important;
+  width: 56px !important;
+}
+
+/* Mobile drawer backdrop overlay: solid tint without blur */
+.theme-vintage .mobile-drawer-backdrop {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background-color: rgba(36, 29, 20, 0.48) !important;
+}
+
+/* 2. Topbar cartouche framing (removing capsule layout) */
+.theme-vintage header {
+  border-radius: 0px !important;
+  border: 2.5px solid #735d44 !important;
+  box-shadow: 
+    inset 0 0 0 3px #f5ebd3, 
+    inset 0 0 0 4px #857053, 
+    0 8px 24px rgba(44, 35, 23, 0.22) !important;
+}
+
+/* 3. Wax seal style tags for badges */
+.theme-vintage span.inline-flex.items-center.px-2.py-0\.75 {
+  background: #84231b !important;
+  color: #fcf8ee !important;
+  border: 1px solid #5a1510 !important;
+  font-family: var(--font-dates-val), serif !important;
+  font-size: 10px !important;
+  letter-spacing: 0.1em !important;
+  font-weight: bold !important;
+  border-radius: 1px !important;
+  box-shadow: 
+    1px 1px 0px rgba(0, 0, 0, 0.15), 
+    inset 0 0 5px rgba(0, 0, 0, 0.25) !important;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+}
+
+.theme-vintage span.inline-flex.items-center.px-2.py-0\.75 svg {
+  color: #fcf8ee !important;
+  stroke-width: 2.2px !important;
+}
+
+/* 4. Hand-stamped wood-cut look for buttons, lists, and select controls */
+.theme-vintage button,
+.theme-vintage select,
+.theme-vintage a.group {
+  background-color: #ecdcb9 !important;
+  border: 1px solid #857053 !important;
+  color: #433222 !important;
+  font-family: var(--font-dates-val), serif !important;
+  font-weight: bold !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  border-radius: 0px !important;
+  box-shadow: 1px 1px 3px rgba(92, 74, 55, 0.15) !important;
+  transition: all 0.18s ease-in-out !important;
+}
+
+.theme-vintage button:hover,
+.theme-vintage select:hover,
+.theme-vintage a.group:hover {
+  background-color: #e2cfa4 !important;
+  border-color: #735d44 !important;
+  color: #1f140a !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 2px 3px 6px rgba(92, 74, 55, 0.25) !important;
+}
+
+/* Remove default zoom-out rounding */
+.theme-vintage button[class*="rounded-full!"] {
+  border-radius: 0px !important;
+}
+
+/* Reset hover bg for transparent/navigation icon buttons */
+.theme-vintage button[aria-label*="lose"],
+.theme-vintage button[class*="rounded-full"] {
+  border-radius: 0px !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #857053 !important;
+}
+
+.theme-vintage button[aria-label*="lose"]:hover,
+.theme-vintage button[class*="rounded-full"]:hover {
+  color: #1f140a !important;
+  background: rgba(133, 112, 83, 0.15) !important;
+  transform: none !important;
+}
+
+/* 5. Separators */
+.theme-vintage div.border-b,
+.theme-vintage div.border-t,
+.theme-vintage li.border-b {
+  border-color: rgba(133, 112, 83, 0.35) !important;
+  border-style: dashed !important;
+}
+
+/* 6. Pirate Theme Custom Scrollbars */
+.theme-vintage .custom-scrollbar::-webkit-scrollbar-track {
+  background: #e6ddc7 !important;
+}
+
+.theme-vintage .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #857053 !important;
+  border: 1px solid #e6ddc7 !important;
+  border-radius: 0px !important;
+}
+
+.theme-vintage .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #735d44 !important;
 }

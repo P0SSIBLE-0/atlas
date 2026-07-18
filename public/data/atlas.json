@@ -1,0 +1,15 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-07-17",
+  "places": [
+    {
+      "id": "agra",
+      "slug": "agra",
+      "name": "Agra",
+      "type": "imperial-city",
+      "coordinates": [78.0081, 27.1767],
+      "confidence": "high",
+      "sources": ["UNESCO World Heritage Centre", "Encyclopaedia Britannica"]
+    }
+  ]
+}
