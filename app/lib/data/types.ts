@@ -62,3 +62,32 @@ export type RestCountry = {
 
 export type SparqlBinding = Record<string, { type: string; value: string; datatype?: string }>;
 export type SparqlResponse = { results?: { bindings?: SparqlBinding[] } };
+
+export type WikidataQuerySearchResponse = {
+  query?: {
+    search?: Array<{ title: string; snippet?: string }>;
+  };
+};
+
+export type WikidataEntityClaim = {
+  mainsnak?: {
+    datavalue?: {
+      value?:
+        | string
+        | { id?: string; time?: string; text?: string; "entity-type"?: string };
+    };
+    datatype?: string;
+  };
+};
+
+export type WikidataEntitiesResponse = {
+  entities?: Record<
+    string,
+    {
+      id?: string;
+      labels?: Record<string, { value?: string }>;
+      descriptions?: Record<string, { value?: string }>;
+      claims?: Record<string, WikidataEntityClaim[]>;
+    }
+  >;
+};

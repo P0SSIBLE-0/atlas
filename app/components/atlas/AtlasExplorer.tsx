@@ -68,6 +68,8 @@ export default function AtlasExplorer() {
   const [yearIndex, setYearIndex] = useState(4);
   const [activeMomentId, setActiveMomentId] = useState<string | null>(null);
   const [mapLoading, setMapLoading] = useState(true);
+  // Bumps on every country pick so re-clicking the same country retries flaky APIs
+  const [countryRequestId, setCountryRequestId] = useState(0);
 
   useEffect(() => {
     document.body.classList.remove("theme-vintage", "theme-minimal", "theme-modern");
@@ -174,6 +176,7 @@ export default function AtlasExplorer() {
     setCountryLoadingPeople(true);
     setCountryLoadingEvents(true);
     setCountryLoadingEmpires(true);
+    setCountryRequestId((id) => id + 1);
 
     if (pick.bounds) {
       mapHandle.current?.flyToBounds(pick.bounds);
@@ -315,7 +318,7 @@ export default function AtlasExplorer() {
 
   // Progressive country dossier
   useEffect(() => {
-    if (!countryName || depth === "world") return;
+    if (!countryName || depth === "world" || countryRequestId === 0) return;
     const controller = new AbortController();
 
     loadCountryDossierProgressive(
@@ -336,7 +339,7 @@ export default function AtlasExplorer() {
     });
 
     return () => controller.abort();
-  }, [applyCountryDossier, countryCenter, countryName, depth]);
+  }, [applyCountryDossier, countryCenter, countryName, countryRequestId, depth]);
 
   useEffect(() => {
     if (!selectedPlace) return;
@@ -506,7 +509,7 @@ export default function AtlasExplorer() {
 
         <AnimatePresence>
           {showCountryPanel && countryName && (
-          <CountryPanel
+            <CountryPanel
               countryName={countryName}
               status={countryStatus}
               meta={meta}
@@ -531,7 +534,7 @@ export default function AtlasExplorer() {
 
         <AnimatePresence>
           {showPlacePanel && selectedPlace && (
-          <PlacePanel
+            <PlacePanel
               place={selectedPlace}
               status={placeStatus}
               people={filteredPlacePeople}

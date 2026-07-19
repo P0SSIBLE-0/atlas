@@ -1,5 +1,5 @@
 import type { CountryDossier, HistoryEntity, AtlasPlace } from "../../types";
-import { withTimeout } from "../utils";
+import { withTimeout, withTimeoutResult } from "../utils";
 import { resolveWikidataId, fetchCountryPeople, fetchCountryEvents, fetchCountryEmpires, fetchFamousPlaces } from "../providers/wikidata";
 import { getHistoricRecord, fetchWikipediaRelated, getPlacesNear } from "../providers/wikipedia";
 import { getCountryMeta } from "../providers/restcountries";
@@ -16,7 +16,10 @@ const dossierCache = new Map<string, CountryDossier>();
 /**
  * Fast country load:
  * 1) core — REST + Wikipedia + related (snappy first paint)
- * 2) full — optional Wikidata SPARQL with short timeout (never blocks UI long)
+ * 2) full — optional Wikidata with timeout (never blocks UI long)
+ *
+ * Incomplete results (timeouts with empty people/events) are NOT cached so
+ * the next open of the same country can retry public sources.
  */
 export async function loadCountryDossierProgressive(
   countryName: string,
@@ -37,14 +40,20 @@ export async function loadCountryDossierProgressive(
   const relatedPromise = withTimeout(fetchWikipediaRelated(countryName, signal), 5000, [], signal);
   // Give QID lookup a generous budget — Wikidata search can be slow.
   // A short timeout here causes the entire SPARQL phase to be silently skipped.
-  const qidPromise = withTimeout(resolveWikidataId(countryName, signal), 7000, null, signal);
+  const qidPromise = withTimeoutResult(resolveWikidataId(countryName, signal), 8000, null, signal);
 
-  const [meta, record, related, qid] = await Promise.all([
+  const [meta, record, related, qidResult] = await Promise.all([
     metaPromise,
     recordPromise,
     relatedPromise,
     qidPromise,
   ]);
+
+  let qid = qidResult.value;
+  // Prefer QID from Wikipedia summary when search timed out or missed
+  if (!qid && record?.wikidataId) {
+    qid = record.wikidataId;
+  }
 
   const searchName = meta?.name ?? countryName;
   const lat = center?.[1] ?? meta?.latlng?.[0];
@@ -100,16 +109,16 @@ export async function loadCountryDossierProgressive(
   };
   onUpdate({ stage: "core", dossier: core });
 
-  // Stream SPARQL enrichment: each query independently emits a UI update as soon as it resolves.
-  // No query blocks another — the UI sees people, events, places appear one by one.
+  // Stream enrichment: each query independently emits a UI update as soon as it resolves.
   if (qid && !signal?.aborted) {
-    // Accumulated results — mutated by each query's .then(), read by emit()
     let sPeople: HistoryEntity[] = [];
     let sEvents: HistoryEntity[] = [];
     let sEmpires: HistoryEntity[] = [];
     let sFamous: HistoryEntity[] = [];
+    let peopleTimedOut = false;
+    let eventsTimedOut = false;
+    let placesTimedOut = false;
 
-    /** Build a dossier from current accumulated SPARQL state and push to UI. */
     const emit = () => {
       if (signal?.aborted) return;
       const p = mergeEntities(sPeople, people);
@@ -137,20 +146,40 @@ export async function loadCountryDossierProgressive(
       });
     };
 
-    // Fire all four queries concurrently — each emits independently on arrival
-    const p1 = withTimeout(fetchCountryPeople(qid, signal), 7000, [], signal)
-      .then((r) => { sPeople = r; emit(); });
-    const p2 = withTimeout(fetchCountryEvents(qid, signal), 7000, [], signal)
-      .then((r) => { sEvents = r; emit(); });
-    const p3 = withTimeout(fetchFamousPlaces(qid, signal), 7000, [], signal)
-      .then((r) => { sFamous = r; emit(); });
+    // People: longer budget + one automatic retry on empty/timeout
+    const p1 = (async () => {
+      const first = await withTimeoutResult(fetchCountryPeople(qid!, signal), 10000, [], signal);
+      if (!signal?.aborted && (first.value.length > 0 || !first.timedOut)) {
+        sPeople = first.value;
+        peopleTimedOut = first.timedOut && first.value.length === 0;
+        emit();
+        return;
+      }
+      // Retry once — public APIs are often flaky under load
+      const second = await withTimeoutResult(fetchCountryPeople(qid!, signal), 12000, [], signal);
+      sPeople = second.value;
+      peopleTimedOut = second.timedOut && second.value.length === 0;
+      emit();
+    })();
+
+    const p2 = withTimeoutResult(fetchCountryEvents(qid, signal), 8000, [], signal).then((r) => {
+      sEvents = r.value;
+      eventsTimedOut = r.timedOut && r.value.length === 0;
+      emit();
+    });
+    const p3 = withTimeoutResult(fetchFamousPlaces(qid, signal), 8000, [], signal).then((r) => {
+      sFamous = r.value;
+      placesTimedOut = r.timedOut && r.value.length === 0;
+      emit();
+    });
     const p4 =
       empires.length >= 3
         ? Promise.resolve()
-        : withTimeout(fetchCountryEmpires(qid, signal), 5000, [], signal)
-            .then((r) => { sEmpires = r; emit(); });
+        : withTimeout(fetchCountryEmpires(qid, signal), 6000, [], signal).then((r) => {
+            sEmpires = r;
+            emit();
+          });
 
-    // Wait for all to settle before writing cache
     await Promise.allSettled([p1, p2, p3, p4]);
 
     if (!signal?.aborted) {
@@ -173,7 +202,15 @@ export async function loadCountryDossierProgressive(
         empires: finalEmpires.slice(0, 8),
         timeline: buildTimeline([...finalEvents, ...finalEmpires, ...finalPeople]),
       };
-      dossierCache.set(cacheKey, full);
+
+      // Never lock in a timeout-induced empty people/events state — next open can retry
+      const incompleteDueToTimeout =
+        (peopleTimedOut && finalPeople.length === 0) ||
+        (eventsTimedOut && finalEvents.length === 0 && placesTimedOut && full.places.length === 0);
+
+      if (!incompleteDueToTimeout) {
+        dossierCache.set(cacheKey, full);
+      }
       return full;
     }
 
@@ -188,9 +225,9 @@ export async function loadCountryDossierProgressive(
     };
   }
 
-  // Only cache non-empty core results — don't lock in a timeout-induced empty state
+  // No QID — only cache non-empty core results
   const coreHasData = core.people.length > 0 || core.events.length > 0 || core.places.length > 0;
-  if (coreHasData && !signal?.aborted) {
+  if (coreHasData && !signal?.aborted && !qidResult.timedOut) {
     dossierCache.set(cacheKey, core);
   }
   onUpdate({ stage: "full", dossier: core });

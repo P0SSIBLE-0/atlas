@@ -1,4 +1,4 @@
-import type { FillLayerSpecification, LineLayerSpecification } from "maplibre-gl";
+import type { FillLayerSpecification, LineLayerSpecification, Map as MaplibreMap } from "maplibre-gl";
 import type { Theme } from "./types";
 
 export const COUNTRY_SOURCE_URL =
@@ -12,169 +12,121 @@ export const WORLD_VIEW = {
   zoom: 1.6,
 } as const;
 
-export function getMapStyle(theme: Theme): any {
-  // Minimal theme uses Carto Positron directly
-  if (theme === "minimal") {
-    return "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
-  }
+type ThemeColors = {
+  ocean: string;
+  land: string;
+  coastline: string;
+  boundary: string;
+  boundaryWidth: number;
+  label: string;
+  labelHalo: string;
+  geoline: string;
+  geolineOpacity: number;
+  geolineHalo: string;
+  coastlineWidth: number;
+  showSatellite: boolean;
+};
 
-  // Modern theme uses Esri World Imagery realistic satellite layer
-  if (theme === "modern") {
+function themeColors(theme: Theme): ThemeColors {
+  if (theme === "minimal") {
     return {
-      version: 8,
-      name: "Atlas-modern-satellite",
-      glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
-      sources: {
-        carto: {
-          type: "vector",
-          url: "https://tiles.basemaps.cartocdn.com/vector/carto.streets/v1/tiles.json",
-        },
-        satellite: {
-          type: "raster",
-          tiles: [
-            "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-          ],
-          tileSize: 256,
-          attribution: "Esri, USGS, NOAA",
-        },
-      },
-      layers: [
-        {
-          id: "satellite-background",
-          type: "raster",
-          source: "satellite",
-          paint: {
-            "raster-opacity": 1.0,
-          },
-        },
-        {
-          id: "admin-boundaries",
-          type: "line",
-          source: "carto",
-          "source-layer": "boundary",
-          filter: ["all", ["==", "admin_level", 2], ["==", "maritime", 0]],
-          paint: {
-            "line-color": "#ffffff",
-            "line-width": 1.2,
-            "line-opacity": 0.75,
-          },
-        },
-        {
-          id: "country-labels",
-          type: "symbol",
-          source: "carto",
-          "source-layer": "place",
-          minzoom: 2,
-          maxzoom: 6,
-          filter: ["all", ["==", "class", "country"]],
-          layout: {
-            "text-font": ["Open Sans Semibold"],
-            "text-size": {
-              stops: [
-                [2, 11],
-                [5, 15],
-              ],
-            },
-            "text-field": "{name:en}",
-            "text-transform": "uppercase",
-          },
-          paint: {
-            "text-color": "#ffffff",
-            "text-halo-color": "#15213b",
-            "text-halo-width": 2,
-          },
-        },
-        {
-          id: "city-labels",
-          type: "symbol",
-          source: "carto",
-          "source-layer": "place",
-          minzoom: 4,
-          filter: ["all", ["==", "class", "city"]],
-          layout: {
-            "text-font": ["Open Sans Semibold"],
-            "text-size": {
-              stops: [
-                [4, 10],
-                [8, 14],
-              ],
-            },
-            "text-field": "{name:en}",
-            "text-max-width": 8,
-          },
-          paint: {
-            "text-color": "#ffffff",
-            "text-halo-color": "#15213b",
-            "text-halo-width": 1.5,
-          },
-        },
-      ],
+      ocean: "#e8eef2",
+      land: "#f7f9fb",
+      coastline: "#9aa8b0",
+      boundary: "rgba(100, 115, 107, 0.35)",
+      boundaryWidth: 0.75,
+      label: "#3d4a45",
+      labelHalo: "#f7f9fb",
+      geoline: "#a0aab0",
+      geolineOpacity: 0.22,
+      geolineHalo: "#f7f9fb",
+      coastlineWidth: 0.7,
+      showSatellite: false,
     };
   }
-
-  let oceanColor = "#D8F2FF";
-  let landColor = "#FFFFFF";
-  let coastlineColor = "#198EC8";
-  let boundaryColor = "rgba(255, 255, 255, 1)";
-  let boundaryWidth = 0.7;
-
-  // Detailing configurations
-  let labelColor = "rgba(8, 37, 77, 1)";
-  let labelHaloColor = "rgba(255, 255, 255, 1)";
-
-  let geolineColor = "#1077B0";
-  let geolineOpacity = 0.5;
-  let geolineHaloColor = "rgba(255, 255, 255, 1)";
-
-  if (theme === "vintage") {
-    oceanColor = "#9bb2af"; // Faded vintage teal ocean
-    landColor = "#f5ebd3"; // Soft parchment cream land
-    coastlineColor = "#857053"; // Sketchy sepia coastline
-    boundaryColor = "rgba(133, 112, 83, 0.45)"; // Soft sepia boundaries
-    boundaryWidth = 1.0;
-
-    labelColor = "#433222"; // Dark ink/brown country names
-    labelHaloColor = "#f5ebd3"; // Halo matches land color
-
-    geolineColor = "#857053"; // Sepia lines
-    geolineOpacity = 0.28;
-    geolineHaloColor = "#ecdcb9"; // Halo matches ocean color
-  } else if (theme === "modern") {
-    oceanColor = "#6687ad"; // Rich slate blue ocean
-    landColor = "#f2f5ff"; // Bright cool white-blue land
-    coastlineColor = "#4b6d93"; // Contrasting blue coastline
-    boundaryColor = "rgba(102, 135, 173, 0.4)";
-    boundaryWidth = 0.8;
-
-    labelColor = "#15213b"; // Rich modern indigo text
-    labelHaloColor = "#f2f5ff";
-
-    geolineColor = "#4b6d93";
-    geolineOpacity = 0.25;
-    geolineHaloColor = "#6687ad";
+  if (theme === "modern") {
+    return {
+      ocean: "#6687ad",
+      land: "#f2f5ff",
+      coastline: "#ffffff",
+      boundary: "rgba(255, 255, 255, 0.75)",
+      boundaryWidth: 1.2,
+      label: "#ffffff",
+      labelHalo: "#15213b",
+      geoline: "#4b6d93",
+      geolineOpacity: 0.2,
+      geolineHalo: "#15213b",
+      coastlineWidth: 0.8,
+      showSatellite: true,
+    };
   }
+  // vintage (default)
+  return {
+    ocean: "#9bb2af",
+    land: "#f5ebd3",
+    coastline: "#857053",
+    boundary: "rgba(133, 112, 83, 0.45)",
+    boundaryWidth: 1.0,
+    label: "#433222",
+    labelHalo: "#f5ebd3",
+    geoline: "#857053",
+    geolineOpacity: 0.28,
+    geolineHalo: "#ecdcb9",
+    coastlineWidth: 1.2,
+    showSatellite: false,
+  };
+}
 
+/**
+ * Single stable basemap style for all themes.
+ * Theme switches only update paint/layout properties — no full style reload,
+ * so country borders are not re-downloaded/re-parsed and the map stays interactive.
+ */
+export function getUnifiedMapStyle(initialTheme: Theme = "vintage"): any {
+  const c = themeColors(initialTheme);
   return {
     version: 8,
-    name: `Atlas-${theme}`,
+    name: "Atlas-unified",
     glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
     sources: {
       carto: {
         type: "vector",
-        url: "https://tiles.basemaps.cartocdn.com/vector/carto.streets/v1/tiles.json"
+        url: "https://tiles.basemaps.cartocdn.com/vector/carto.streets/v1/tiles.json",
       },
       maplibre: {
         type: "vector",
         tiles: ["https://demotiles.maplibre.org/tiles/{z}/{x}/{y}.pbf"],
         maxzoom: 6,
       },
+      satellite: {
+        type: "raster",
+        tiles: [
+          "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        ],
+        tileSize: 256,
+        attribution: "Esri, USGS, NOAA",
+      },
     },
     layers: [
       {
+        id: "satellite-background",
+        type: "raster",
+        source: "satellite",
+        layout: {
+          visibility: c.showSatellite ? "visible" : "none",
+        },
+        paint: {
+          "raster-opacity": 1,
+        },
+      },
+      {
         id: "background",
         type: "background",
+        layout: {
+          visibility: c.showSatellite ? "none" : "visible",
+        },
         paint: {
-          "background-color": landColor,
+          "background-color": c.land,
         },
       },
       {
@@ -182,8 +134,11 @@ export function getMapStyle(theme: Theme): any {
         type: "fill",
         source: "carto",
         "source-layer": "water",
+        layout: {
+          visibility: c.showSatellite ? "none" : "visible",
+        },
         paint: {
-          "fill-color": oceanColor,
+          "fill-color": c.ocean,
         },
       },
       {
@@ -194,10 +149,11 @@ export function getMapStyle(theme: Theme): any {
         layout: {
           "line-cap": "round",
           "line-join": "round",
+          visibility: c.showSatellite ? "none" : "visible",
         },
         paint: {
-          "line-color": coastlineColor,
-          "line-width": theme === "vintage" ? 1.2 : 0.8,
+          "line-color": c.coastline,
+          "line-width": c.coastlineWidth,
         },
       },
       {
@@ -207,8 +163,8 @@ export function getMapStyle(theme: Theme): any {
         "source-layer": "boundary",
         filter: ["all", ["==", "admin_level", 2], ["==", "maritime", 0]],
         paint: {
-          "line-color": boundaryColor,
-          "line-width": boundaryWidth,
+          "line-color": c.boundary,
+          "line-width": c.boundaryWidth,
         },
       },
       {
@@ -217,9 +173,12 @@ export function getMapStyle(theme: Theme): any {
         source: "maplibre",
         "source-layer": "geolines",
         filter: ["all", ["!=", "name", "International Date Line"]],
+        layout: {
+          visibility: c.showSatellite ? "none" : "visible",
+        },
         paint: {
-          "line-color": geolineColor,
-          "line-opacity": geolineOpacity,
+          "line-color": c.geoline,
+          "line-opacity": c.geolineOpacity,
           "line-dasharray": [3, 3],
         },
       },
@@ -238,17 +197,16 @@ export function getMapStyle(theme: Theme): any {
             ],
           },
           "text-field": "{name}",
-          "visibility": "visible",
+          visibility: c.showSatellite ? "none" : "visible",
           "symbol-placement": "line",
         },
         paint: {
-          "text-color": geolineColor,
+          "text-color": c.geoline,
           "text-halo-blur": 1,
-          "text-halo-color": geolineHaloColor,
+          "text-halo-color": c.geolineHalo,
           "text-halo-width": 1,
         },
       },
-      // Country labels layer
       {
         id: "country-labels",
         type: "symbol",
@@ -269,12 +227,11 @@ export function getMapStyle(theme: Theme): any {
           "text-transform": "uppercase",
         },
         paint: {
-          "text-color": labelColor,
-          "text-halo-color": labelHaloColor,
+          "text-color": c.label,
+          "text-halo-color": c.labelHalo,
           "text-halo-width": 2,
         },
       },
-      // City labels layer (zoomed-in cities)
       {
         id: "city-labels",
         type: "symbol",
@@ -294,13 +251,89 @@ export function getMapStyle(theme: Theme): any {
           "text-max-width": 8,
         },
         paint: {
-          "text-color": labelColor,
-          "text-halo-color": labelHaloColor,
+          "text-color": c.label,
+          "text-halo-color": c.labelHalo,
           "text-halo-width": 1.5,
         },
       },
     ],
   };
+}
+
+/** @deprecated Prefer getUnifiedMapStyle + applyThemeToMap — kept for any external callers. */
+export function getMapStyle(theme: Theme): any {
+  return getUnifiedMapStyle(theme);
+}
+
+/** Instant theme switch: only paint/layout properties, never reloads sources. */
+export function applyThemeToMap(map: MaplibreMap, theme: Theme): void {
+  if (!map.isStyleLoaded()) return;
+  const c = themeColors(theme);
+  const vis = (show: boolean) => (show ? "visible" : "none");
+
+  const setPaint = (layer: string, prop: string, value: unknown) => {
+    if (map.getLayer(layer)) map.setPaintProperty(layer, prop, value);
+  };
+  const setLayout = (layer: string, prop: string, value: unknown) => {
+    if (map.getLayer(layer)) map.setLayoutProperty(layer, prop, value);
+  };
+
+  setLayout("satellite-background", "visibility", vis(c.showSatellite));
+  setLayout("background", "visibility", vis(!c.showSatellite));
+  setLayout("water-fill", "visibility", vis(!c.showSatellite));
+  setLayout("coastline", "visibility", vis(!c.showSatellite));
+  setLayout("geolines", "visibility", vis(!c.showSatellite));
+  setLayout("geolines-label", "visibility", vis(!c.showSatellite));
+
+  setPaint("background", "background-color", c.land);
+  setPaint("water-fill", "fill-color", c.ocean);
+  setPaint("coastline", "line-color", c.coastline);
+  setPaint("coastline", "line-width", c.coastlineWidth);
+  setPaint("admin-boundaries", "line-color", c.boundary);
+  setPaint("admin-boundaries", "line-width", c.boundaryWidth);
+  setPaint("geolines", "line-color", c.geoline);
+  setPaint("geolines", "line-opacity", c.geolineOpacity);
+  setPaint("geolines-label", "text-color", c.geoline);
+  setPaint("geolines-label", "text-halo-color", c.geolineHalo);
+  setPaint("country-labels", "text-color", c.label);
+  setPaint("country-labels", "text-halo-color", c.labelHalo);
+  setPaint("city-labels", "text-color", c.label);
+  setPaint("city-labels", "text-halo-color", c.labelHalo);
+}
+
+// ── Country boundaries cache ──────────────────────────────────────────────
+// Re-parsing the large GeoJSON on every theme/style change freezes the UI.
+// Keep one in-memory copy and share it with the map Source.
+
+type CountriesGeoJSON = GeoJSON.FeatureCollection;
+
+let countriesData: CountriesGeoJSON | null = null;
+let countriesPromise: Promise<CountriesGeoJSON> | null = null;
+
+export function preloadCountriesGeoJSON(): Promise<CountriesGeoJSON> {
+  if (countriesData) return Promise.resolve(countriesData);
+  if (countriesPromise) return countriesPromise;
+
+  countriesPromise = fetch(COUNTRY_SOURCE_URL)
+    .then((res) => {
+      if (!res.ok) throw new Error(`Countries GeoJSON failed: ${res.status}`);
+      return res.json() as Promise<CountriesGeoJSON>;
+    })
+    .then((data) => {
+      countriesData = data;
+      return data;
+    })
+    .catch((err) => {
+      // Allow retry on next call
+      countriesPromise = null;
+      throw err;
+    });
+
+  return countriesPromise;
+}
+
+export function getCachedCountriesGeoJSON(): CountriesGeoJSON | null {
+  return countriesData;
 }
 
 export function getCountryFill(theme: Theme): Omit<FillLayerSpecification, "source"> {
@@ -452,9 +485,9 @@ export function getGraticulesGeoJSON() {
 
 export function getRhumbLinesGeoJSON() {
   const centers = [
-    [-32, 28],    // Mid-Atlantic
-    [-125, -15],  // Pacific
-    [75, -20],    // Indian Ocean
+    [-32, 28], // Mid-Atlantic
+    [-125, -15], // Pacific
+    [75, -20], // Indian Ocean
   ];
   const features = [];
   const length = 45;

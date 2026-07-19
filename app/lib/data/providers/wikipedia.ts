@@ -59,15 +59,17 @@ export async function fetchWikipediaRelated(
   try {
     const encoded = encodeURIComponent(title);
     // Action API with generator=links: returns pages linked from the article.
-    // Supports origin=* so no proxy needed.
+    // Supports origin=* so no proxy needed. Higher limit improves person hit-rate.
     const url =
       `https://en.wikipedia.org/w/api.php?action=query&titles=${encoded}` +
-      `&generator=links&gpllimit=24&gplnamespace=0` +
+      `&generator=links&gpllimit=40&gplnamespace=0` +
       `&prop=description|pageimages&piprop=thumbnail&pithumbsize=120` +
       `&format=json&origin=*`;
     const data = await fetchJson<WikipediaLinksResponse>(url, signal);
     const pages = Object.values(data.query?.pages ?? {}).filter((p) => !("missing" in p));
-    return pages.slice(0, 16).map((page, index) => {
+
+    // Prefer people/events over generic place links so core dossier isn't empty
+    const entities = pages.map((page, index) => {
       const label = page.title ?? `Related ${index + 1}`;
       const desc = page.description;
       const kind = classifyRelated(desc);
@@ -83,6 +85,11 @@ export async function fetchWikipediaRelated(
         longitude: coords?.lon,
       } satisfies HistoryEntity;
     });
+
+    const rank = (kind: HistoryEntity["kind"]) =>
+      kind === "person" ? 0 : kind === "event" ? 1 : kind === "empire" ? 2 : 3;
+    entities.sort((a, b) => rank(a.kind) - rank(b.kind));
+    return entities.slice(0, 20);
   } catch {
     return [];
   }

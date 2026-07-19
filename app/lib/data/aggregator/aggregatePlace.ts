@@ -1,5 +1,5 @@
 import type { AtlasPlace, HistoryEntity, PlaceDossier } from "../../types";
-import { withTimeout } from "../utils";
+import { withTimeout, withTimeoutResult } from "../utils";
 import { resolveWikidataId, fetchPlacePeople, fetchPlaceEvents } from "../providers/wikidata";
 import { fetchWikipediaRelated, getPlacesNear, getPlaceDetails } from "../providers/wikipedia";
 import { mergeEntities, buildTimeline } from "../normalizers/entity";
@@ -9,10 +9,12 @@ const placeDossierCache = new Map<string, PlaceDossier>();
 /**
  * Progressive place dossier loader.
  *
- * Fires Wikipedia related, nearby geo, and Wikidata SPARQL as independent
+ * Fires Wikipedia related, nearby geo, and Wikidata as independent
  * concurrent requests. Each calls `onUpdate` the moment it resolves —
  * the UI sees data appear section by section rather than waiting for the
  * slowest query.
+ *
+ * Incomplete results (people timed out empty) are not cached so a re-open retries.
  */
 export async function loadPlaceDossierProgressive(
   place: AtlasPlace,
@@ -34,6 +36,7 @@ export async function loadPlaceDossierProgressive(
   let curPeople: HistoryEntity[] = [];
   let curEvents: HistoryEntity[] = [];
   let curRelated: HistoryEntity[] = [];
+  let peopleTimedOut = false;
 
   const emit = () => {
     if (signal?.aborted) return;
@@ -93,26 +96,36 @@ export async function loadPlaceDossierProgressive(
     emit();
   });
 
-  // --- QID resolution (SPARQL depends on this) ---
+  // --- QID resolution ---
   const qid =
     detailed.wikidataId ??
     (await withTimeout(resolveWikidataId(detailed.title, signal), 6000, null, signal));
 
-  // --- SPARQL (fires as soon as qid is known, in parallel with above) ---
-  const sparqlPromises: Promise<void>[] = qid
-    ? [
-        withTimeout(fetchPlacePeople(qid, signal), 6000, [], signal).then((r) => {
-          curPeople = mergeEntities(r, curPeople);
+  // --- People / events (with retry for flaky public APIs) ---
+  const peoplePromise = qid
+    ? (async () => {
+        const first = await withTimeoutResult(fetchPlacePeople(qid, signal), 8000, [], signal);
+        if (!signal?.aborted && (first.value.length > 0 || !first.timedOut)) {
+          curPeople = mergeEntities(first.value, curPeople);
+          peopleTimedOut = first.timedOut && first.value.length === 0;
           emit();
-        }),
-        withTimeout(fetchPlaceEvents(qid, signal), 6000, [], signal).then((r) => {
-          curEvents = mergeEntities(r, curEvents);
-          emit();
-        }),
-      ]
-    : [];
+          return;
+        }
+        const second = await withTimeoutResult(fetchPlacePeople(qid, signal), 10000, [], signal);
+        curPeople = mergeEntities(second.value, curPeople);
+        peopleTimedOut = second.timedOut && second.value.length === 0;
+        emit();
+      })()
+    : Promise.resolve();
 
-  await Promise.allSettled([relatedPromise, nearbyPromise, ...sparqlPromises]);
+  const eventsPromise = qid
+    ? withTimeout(fetchPlaceEvents(qid, signal), 8000, [], signal).then((r) => {
+        curEvents = mergeEntities(r, curEvents);
+        emit();
+      })
+    : Promise.resolve();
+
+  await Promise.allSettled([relatedPromise, nearbyPromise, peoplePromise, eventsPromise]);
 
   const finalDossier: PlaceDossier = {
     place: detailed,
@@ -126,7 +139,9 @@ export async function loadPlaceDossierProgressive(
     finalDossier.people.length > 0 ||
     finalDossier.events.length > 0 ||
     finalDossier.relatedPlaces.length > 0;
-  if (hasData && !signal?.aborted) {
+  // Don't cache timeout-empty people — next open should retry Wikidata
+  const incomplete = peopleTimedOut && finalDossier.people.length === 0;
+  if (hasData && !incomplete && !signal?.aborted) {
     placeDossierCache.set(cacheKey, finalDossier);
   }
 

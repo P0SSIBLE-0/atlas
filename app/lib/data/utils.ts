@@ -13,19 +13,25 @@ export async function fetchJson<T>(
   return response.json() as Promise<T>;
 }
 
-/** Resolve quickly; fall back if the network stalls. */
-export function withTimeout<T>(
+export type TimeoutResult<T> = {
+  value: T;
+  /** True when the timeout or abort won before the promise settled. */
+  timedOut: boolean;
+};
+
+/** Resolve quickly; fall back if the network stalls. Reports whether the fallback was used. */
+export function withTimeoutResult<T>(
   promise: Promise<T>,
   ms: number,
   fallback: T,
   signal?: AbortSignal,
-): Promise<T> {
+): Promise<TimeoutResult<T>> {
   return new Promise((resolve) => {
     let settled = false;
     const timer = setTimeout(() => {
       if (!settled) {
         settled = true;
-        resolve(fallback);
+        resolve({ value: fallback, timedOut: true });
       }
     }, ms);
 
@@ -33,7 +39,7 @@ export function withTimeout<T>(
       if (!settled) {
         settled = true;
         clearTimeout(timer);
-        resolve(fallback);
+        resolve({ value: fallback, timedOut: true });
       }
     };
     signal?.addEventListener("abort", onAbort, { once: true });
@@ -43,17 +49,27 @@ export function withTimeout<T>(
         if (!settled) {
           settled = true;
           clearTimeout(timer);
-          resolve(value);
+          resolve({ value, timedOut: false });
         }
       })
       .catch(() => {
         if (!settled) {
           settled = true;
           clearTimeout(timer);
-          resolve(fallback);
+          resolve({ value: fallback, timedOut: true });
         }
       });
   });
+}
+
+/** Resolve quickly; fall back if the network stalls. */
+export function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  fallback: T,
+  signal?: AbortSignal,
+): Promise<T> {
+  return withTimeoutResult(promise, ms, fallback, signal).then((r) => r.value);
 }
 
 export function commonsThumb(url?: string, width = 240): string | undefined {
@@ -103,10 +119,14 @@ export function wikipediaUrlFromTitle(title: string): string {
 export function classifyRelated(description?: string, type?: string): import("../types").EntityKind {
   const text = `${description ?? ""} ${type ?? ""}`.toLowerCase();
   if (
-    /\b(emperor|king|queen|ruler|president|prime minister|general|philosopher|poet|scientist|artist|sultan|pharaoh|leader|born|politician|writer)\b/.test(
+    /\b(emperor|king|queen|ruler|president|prime minister|general|philosopher|poet|scientist|artist|sultan|pharaoh|leader|born|politician|writer|explorer|composer|painter|novelist|activist|soldier|diplomat|inventor|mathematician|physicist|chemist|biologist|historian|saint|pope|caliph|tsar|czar|prince|princess|duke|duchess|empress|dictator|revolutionary|abolitionist|singer|musician|actor|actress|architect|engineer|economist|jurist|judge|cardinal|bishop|monk|nun|warrior|commander|admiral|marshal|chancellor|minister|statesman|stateswoman)\b/.test(
       text,
     )
   ) {
+    return "person";
+  }
+  // Wikipedia often uses "… (born 18xx)" or "… was a …" patterns for people
+  if (/\b\d{3,4}\s*[–-]\s*\d{0,4}\b/.test(text) && /\b(was|is|were)\b/.test(text)) {
     return "person";
   }
   if (

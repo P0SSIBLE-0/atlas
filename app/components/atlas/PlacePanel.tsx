@@ -223,7 +223,7 @@ export function PlacePanel({
         <div className="flex justify-between items-center text-muted text-[10px] font-bold tracking-[0.14em] uppercase mb-4 font-ui">
           <button
             type="button"
-            className="group inline-flex items-center gap-1.5 border-0 bg-transparent text-gold text-[11px] font-bold tracking-[0.08em] uppercase p-0 cursor-pointer transition-colors hover:text-gold/80"
+            className="group inline-flex items-center gap-1.5 border-0 bg-transparent text-gold text-[11px] font-bold tracking-[0.08em] uppercase py-0.5 px-1.5 cursor-pointer transition-colors hover:text-gold/80"
             onClick={onBack}
           >
             <ArrowLeft className="w-3.5 h-3.5 transition-transform duration-200 group-hover:-translate-x-0.5" />
@@ -298,7 +298,7 @@ export function PlacePanel({
 
         {place.distanceMeters != null ? (
           <div className="flex items-center gap-1.5 my-3 text-muted font-body text-xs leading-normal">
-            <Milestone className="w-3.5 h-3.5 text-muted/65" />
+            <Milestone className="size-3.5 text-muted/65" />
             <p className="m-0">
               About {Math.round(place.distanceMeters / 1000)} km from the country focus point
             </p>

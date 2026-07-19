@@ -1,8 +1,13 @@
 import type { HistoryEntity } from "../../types";
-import type { WikidataSearchResponse, SparqlBinding, SparqlResponse } from "../types";
-import { fetchJson } from "../utils";
+import type {
+  WikidataSearchResponse,
+  WikidataQuerySearchResponse,
+  WikidataEntitiesResponse,
+  SparqlBinding,
+  SparqlResponse,
+} from "../types";
+import { fetchJson, commonsThumb, yearFromIso } from "../utils";
 import { bindingToEntity } from "../normalizers/entity";
-import { yearFromIso } from "../utils";
 
 const qidCache = new Map<string, string | null>();
 
@@ -50,22 +55,45 @@ async function sparql(query: string, signal?: AbortSignal): Promise<SparqlBindin
   return data.results?.bindings ?? [];
 }
 
+/**
+ * Fast people lookup via Wikidata CirrusSearch (usually much more reliable than SPARQL).
+ * Falls back to a lean SPARQL query when search returns nothing.
+ */
 export async function fetchCountryPeople(
   qid: string,
   signal?: AbortSignal,
 ): Promise<HistoryEntity[]> {
+  // 1) CirrusSearch — fast, rarely times out
+  try {
+    const searchUrl =
+      `https://www.wikidata.org/w/api.php?action=query&list=search` +
+      `&srsearch=${encodeURIComponent(`haswbstatement:P27=${qid} haswbstatement:P31=Q5`)}` +
+      `&srnamespace=0&srlimit=14&format=json&origin=*`;
+    const search = await fetchJson<WikidataQuerySearchResponse>(searchUrl, signal);
+    const ids = (search.query?.search ?? [])
+      .map((hit) => hit.title)
+      .filter((id): id is string => /^Q\d+$/.test(id));
+
+    if (ids.length > 0) {
+      const people = await hydrateWikidataPeople(ids, signal);
+      if (people.length > 0) return people.slice(0, 12);
+    }
+  } catch {
+    // fall through to SPARQL
+  }
+
+  // 2) Lean SPARQL fallback — no expensive ORDER BY on sitelinks
   const query = `
-    SELECT ?item ?itemLabel ?itemDescription ?birth ?death ?image ?links WHERE {
+    SELECT ?item ?itemLabel ?itemDescription ?birth ?death ?image WHERE {
       ?item wdt:P27 wd:${qid} ;
             wdt:P31 wd:Q5 ;
             wikibase:sitelinks ?links .
-      FILTER(?links >= 15)
+      FILTER(?links >= 20)
       OPTIONAL { ?item wdt:P569 ?birth . }
       OPTIONAL { ?item wdt:P570 ?death . }
       OPTIONAL { ?item wdt:P18 ?image . }
       SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
     }
-    ORDER BY DESC(?links)
     LIMIT 12
   `;
   try {
@@ -76,6 +104,66 @@ export async function fetchCountryPeople(
   } catch {
     return [];
   }
+}
+
+/** Load labels / birth-death / image for a list of person QIDs. */
+async function hydrateWikidataPeople(
+  ids: string[],
+  signal?: AbortSignal,
+): Promise<HistoryEntity[]> {
+  if (ids.length === 0) return [];
+  const unique = [...new Set(ids)].slice(0, 14);
+  const url =
+    `https://www.wikidata.org/w/api.php?action=wbgetentities` +
+    `&ids=${unique.join("|")}` +
+    `&props=labels|descriptions|claims&languages=en&format=json&origin=*`;
+
+  const data = await fetchJson<WikidataEntitiesResponse>(url, signal);
+  const people: HistoryEntity[] = [];
+
+  for (const id of unique) {
+    const entity = data.entities?.[id];
+    const label = entity?.labels?.en?.value;
+    if (!entity || !label) continue;
+
+    const claims = entity.claims ?? {};
+    const birth = claimTime(claims.P569);
+    const death = claimTime(claims.P570);
+    const imageName = claimString(claims.P18);
+    const imageUrl = imageName
+      ? commonsThumb(
+          `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(imageName)}`,
+        )
+      : undefined;
+
+    people.push({
+      id,
+      label,
+      description: entity.descriptions?.en?.value,
+      kind: "person",
+      imageUrl,
+      yearStart: yearFromIso(birth),
+      yearEnd: yearFromIso(death),
+      url: `https://www.wikidata.org/wiki/${id}`,
+    });
+  }
+
+  return people;
+}
+
+function claimTime(claims?: { mainsnak?: { datavalue?: { value?: unknown } } }[]): string | undefined {
+  const value = claims?.[0]?.mainsnak?.datavalue?.value;
+  if (value && typeof value === "object" && value !== null && "time" in value) {
+    const time = (value as { time?: string }).time;
+    // Wikidata times look like +1889-04-20T00:00:00Z
+    if (typeof time === "string") return time.replace(/^\+/, "");
+  }
+  return undefined;
+}
+
+function claimString(claims?: { mainsnak?: { datavalue?: { value?: unknown } } }[]): string | undefined {
+  const value = claims?.[0]?.mainsnak?.datavalue?.value;
+  return typeof value === "string" ? value : undefined;
 }
 
 export async function fetchCountryEvents(
@@ -183,6 +271,24 @@ export async function fetchPlacePeople(
   qid: string,
   signal?: AbortSignal,
 ): Promise<HistoryEntity[]> {
+  // Fast path: people born in this place
+  try {
+    const searchUrl =
+      `https://www.wikidata.org/w/api.php?action=query&list=search` +
+      `&srsearch=${encodeURIComponent(`haswbstatement:P19=${qid} haswbstatement:P31=Q5`)}` +
+      `&srnamespace=0&srlimit=12&format=json&origin=*`;
+    const search = await fetchJson<WikidataQuerySearchResponse>(searchUrl, signal);
+    const ids = (search.query?.search ?? [])
+      .map((hit) => hit.title)
+      .filter((id): id is string => /^Q\d+$/.test(id));
+    if (ids.length > 0) {
+      const people = await hydrateWikidataPeople(ids, signal);
+      if (people.length > 0) return people.slice(0, 10);
+    }
+  } catch {
+    // fall through
+  }
+
   const query = `
     SELECT ?item ?itemLabel ?itemDescription ?birth ?death ?image WHERE {
       {

@@ -1,20 +1,21 @@
 "use client";
 
-import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import type { MapGeoJSONFeature } from "maplibre-gl";
 import type { MapLayerMouseEvent, MapRef } from "react-map-gl/maplibre";
 import Map, { Layer, NavigationControl, Source, Marker } from "react-map-gl/maplibre";
 import { boundsFromGeometry, centerFromBounds } from "../../lib/geo";
 import {
-  COUNTRY_SOURCE_URL,
   WORLD_VIEW,
+  applyThemeToMap,
   getCountryFill,
   getCountryLine,
   getGraticulesGeoJSON,
   getHoverCountryFill,
-  getMapStyle,
+  getUnifiedMapStyle,
   getSelectedCountryFill,
   getRhumbLinesGeoJSON,
+  preloadCountriesGeoJSON,
 } from "../../lib/map-layers";
 import type { AtlasPlace, MapBounds, Theme } from "../../lib/types";
 import { PlaceMarkers } from "./PlaceMarkers";
@@ -152,6 +153,53 @@ export const AtlasMap = forwardRef<AtlasMapHandle, AtlasMapProps>(function Atlas
 ) {
   const mapRef = useRef<MapRef>(null);
   const hoveredFeatureId = useRef<string | number | null>(null);
+  // Stable style object — theme changes update paint in place, never swap mapStyle
+  const styleObj = useMemo(() => getUnifiedMapStyle("vintage"), []);
+  const [countriesData, setCountriesData] = useState<GeoJSON.FeatureCollection | null>(null);
+  const styleReadyRef = useRef(false);
+  const readyNotifiedRef = useRef(false);
+
+  const notifyReadyIfComplete = useCallback(() => {
+    // Wait for basemap + borders so "Drawing borders" covers the full first paint
+    if (readyNotifiedRef.current) return;
+    if (!styleReadyRef.current || !countriesData) return;
+    readyNotifiedRef.current = true;
+    onMapReady?.();
+  }, [countriesData, onMapReady]);
+
+  useEffect(() => {
+    let cancelled = false;
+    preloadCountriesGeoJSON()
+      .then((data) => {
+        if (!cancelled) setCountriesData(data);
+      })
+      .catch(() => {
+        // Still unblock UI if borders fail — basemap alone is usable
+        if (!cancelled) {
+          setCountriesData({ type: "FeatureCollection", features: [] });
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    notifyReadyIfComplete();
+  }, [notifyReadyIfComplete]);
+
+  // Instant theme switch without reloading basemap or re-parsing borders
+  useEffect(() => {
+    const map = mapRef.current?.getMap();
+    if (!map) return;
+
+    const apply = () => applyThemeToMap(map, theme);
+    if (map.isStyleLoaded()) {
+      apply();
+    } else {
+      map.once("load", apply);
+    }
+  }, [theme]);
 
   useImperativeHandle(ref, () => ({
     flyToWorld() {
@@ -228,7 +276,6 @@ export const AtlasMap = forwardRef<AtlasMapHandle, AtlasMapProps>(function Atlas
     hoveredFeatureId.current = null;
   }, []);
 
-  const styleObj = useMemo(() => getMapStyle(theme), [theme]);
   const graticulesData = useMemo(() => getGraticulesGeoJSON(), []);
   const rhumbLinesData = useMemo(() => getRhumbLinesGeoJSON(), []);
 
@@ -240,6 +287,13 @@ export const AtlasMap = forwardRef<AtlasMapHandle, AtlasMapProps>(function Atlas
     [selectedCountryName, theme],
   );
 
+  const handleLoad = useCallback(() => {
+    const map = mapRef.current?.getMap();
+    if (map) applyThemeToMap(map, theme);
+    styleReadyRef.current = true;
+    notifyReadyIfComplete();
+  }, [notifyReadyIfComplete, theme]);
+
   return (
     <Map
       ref={mapRef}
@@ -249,7 +303,7 @@ export const AtlasMap = forwardRef<AtlasMapHandle, AtlasMapProps>(function Atlas
       onClick={handleClick}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      onLoad={() => onMapReady?.()}
+      onLoad={handleLoad}
       cursor="pointer"
       attributionControl={false}
       reuseMaps
@@ -288,12 +342,14 @@ export const AtlasMap = forwardRef<AtlasMapHandle, AtlasMapProps>(function Atlas
         </Source>
       )}
 
-      <Source id="atlas-country-boundaries" type="geojson" data={COUNTRY_SOURCE_URL} generateId>
-        <Layer {...countryFillObj} />
-        <Layer {...hoverCountryFillObj} />
-        <Layer {...countryLineObj} />
-        {selectedCountryName ? <Layer {...selectedCountryFillObj} /> : null}
-      </Source>
+      {countriesData ? (
+        <Source id="atlas-country-boundaries" type="geojson" data={countriesData} generateId>
+          <Layer {...countryFillObj} />
+          <Layer {...hoverCountryFillObj} />
+          <Layer {...countryLineObj} />
+          {selectedCountryName ? <Layer {...selectedCountryFillObj} /> : null}
+        </Source>
+      ) : null}
 
       {/* Compass Roses, Sailing Ships, Sea Monsters & Ocean Labels in Vintage Look */}
       {theme === "vintage" && (

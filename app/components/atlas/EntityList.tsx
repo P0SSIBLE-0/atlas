@@ -2,15 +2,23 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { ArrowRight } from "lucide-react";
+import {
+  ArrowRight,
+  User,
+  Sparkles,
+  Crown,
+  MapPin,
+  Landmark,
+  type LucideIcon,
+} from "lucide-react";
 import type { EntityKind, HistoryEntity } from "../../lib/types";
 
-const KIND_GLYPH: Record<EntityKind, string> = {
-  person: "♙",
-  event: "✦",
-  empire: "⌁",
-  place: "◉",
-  monument: "▲",
+const KIND_GLYPH: Record<EntityKind, LucideIcon> = {
+  person: User,
+  event: Sparkles,
+  empire: Crown,
+  place: MapPin,
+  monument: Landmark,
 };
 
 const KIND_BG: Record<EntityKind, string> = {
@@ -86,6 +94,7 @@ export function EntityList({ title, entities, emptyHint, isLoading, onSelect }: 
               entity.yearStart && entity.yearEnd
                 ? `${entity.yearStart} – ${entity.yearEnd}`
                 : entity.yearStart;
+            const KindIcon = KIND_GLYPH[entity.kind];
             return (
               <motion.li
                 key={entity.id}
@@ -105,8 +114,8 @@ export function EntityList({ title, entities, emptyHint, isLoading, onSelect }: 
                     // eslint-disable-next-line @next/next/no-img-element
                     <img className="size-9 object-cover border border-ink/18 rounded-theme shrink-0" src={entity.imageUrl} alt="" />
                   ) : (
-                    <span className={`grid place-items-center size-7 rounded-full text-[#f7ecd5] text-[13px] shrink-0 ${KIND_BG[entity.kind]}`}>
-                      {KIND_GLYPH[entity.kind]}
+                    <span className={`grid place-items-center size-7 rounded-full text-[#f7ecd5] shrink-0 ${KIND_BG[entity.kind]}`}>
+                      <KindIcon className="size-3.5" strokeWidth={2.25} aria-hidden />
                     </span>
                   )}
                   <span className="flex-1 min-w-0 text-ink font-body text-[13px]">
