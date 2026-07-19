@@ -7,8 +7,8 @@ export const COUNTRY_SOURCE_URL =
 export const MAP_STYLE = "https://demotiles.maplibre.org/style.json";
 
 export const WORLD_VIEW = {
-  longitude: 20,
-  latitude: 20,
+  longitude: 82,
+  latitude: 21,
   zoom: 1.6,
 } as const;
 
@@ -18,11 +18,105 @@ export function getMapStyle(theme: Theme): any {
     return "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
   }
 
+  // Modern theme uses Esri World Imagery realistic satellite layer
+  if (theme === "modern") {
+    return {
+      version: 8,
+      name: "Atlas-modern-satellite",
+      glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
+      sources: {
+        carto: {
+          type: "vector",
+          url: "https://tiles.basemaps.cartocdn.com/vector/carto.streets/v1/tiles.json",
+        },
+        satellite: {
+          type: "raster",
+          tiles: [
+            "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+          ],
+          tileSize: 256,
+          attribution: "Esri, USGS, NOAA",
+        },
+      },
+      layers: [
+        {
+          id: "satellite-background",
+          type: "raster",
+          source: "satellite",
+          paint: {
+            "raster-opacity": 1.0,
+          },
+        },
+        {
+          id: "admin-boundaries",
+          type: "line",
+          source: "carto",
+          "source-layer": "boundary",
+          filter: ["all", ["==", "admin_level", 2], ["==", "maritime", 0]],
+          paint: {
+            "line-color": "#ffffff",
+            "line-width": 1.2,
+            "line-opacity": 0.75,
+          },
+        },
+        {
+          id: "country-labels",
+          type: "symbol",
+          source: "carto",
+          "source-layer": "place",
+          minzoom: 2,
+          maxzoom: 6,
+          filter: ["all", ["==", "class", "country"]],
+          layout: {
+            "text-font": ["Open Sans Semibold"],
+            "text-size": {
+              stops: [
+                [2, 11],
+                [5, 15],
+              ],
+            },
+            "text-field": "{name:en}",
+            "text-transform": "uppercase",
+          },
+          paint: {
+            "text-color": "#ffffff",
+            "text-halo-color": "#15213b",
+            "text-halo-width": 2,
+          },
+        },
+        {
+          id: "city-labels",
+          type: "symbol",
+          source: "carto",
+          "source-layer": "place",
+          minzoom: 4,
+          filter: ["all", ["==", "class", "city"]],
+          layout: {
+            "text-font": ["Open Sans Semibold"],
+            "text-size": {
+              stops: [
+                [4, 10],
+                [8, 14],
+              ],
+            },
+            "text-field": "{name:en}",
+            "text-max-width": 8,
+          },
+          paint: {
+            "text-color": "#ffffff",
+            "text-halo-color": "#15213b",
+            "text-halo-width": 1.5,
+          },
+        },
+      ],
+    };
+  }
+
   let oceanColor = "#D8F2FF";
   let landColor = "#FFFFFF";
   let coastlineColor = "#198EC8";
   let boundaryColor = "rgba(255, 255, 255, 1)";
-  let boundaryWidth = 0.8;
+  let boundaryWidth = 0.7;
 
   // Detailing configurations
   let labelColor = "rgba(8, 37, 77, 1)";
@@ -269,10 +363,10 @@ export function getHoverCountryFill(theme: Theme): Omit<FillLayerSpecification, 
     fillColor = "#c49a3c";
     hoverOpacity = 0.28;
   } else if (theme === "minimal") {
-    fillColor = "#3a8c86";
+    fillColor = "#0f766e";
     hoverOpacity = 0.20;
   } else if (theme === "modern") {
-    fillColor = "#e26a4c";
+    fillColor = "#4f46e5";
     hoverOpacity = 0.22;
   }
 
@@ -297,10 +391,10 @@ export function getSelectedCountryFill(
     fillColor = "#b87a2c";
     opacity = 0.26;
   } else if (theme === "minimal") {
-    fillColor = "#327e79";
+    fillColor = "#0d9488";
     opacity = 0.25;
   } else if (theme === "modern") {
-    fillColor = "#e26a4c";
+    fillColor = "#6366f1";
     opacity = 0.32;
   }
 

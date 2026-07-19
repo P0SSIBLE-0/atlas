@@ -200,7 +200,7 @@ export const AtlasMap = forwardRef<AtlasMapHandle, AtlasMapProps>(function Atlas
 
   const handleMouseMove = useCallback((event: MapLayerMouseEvent) => {
     const map = mapRef.current?.getMap();
-    if (!map) return;
+    if (!map || !map.getSource("atlas-country-boundaries")) return;
     const feature: MapGeoJSONFeature | undefined = event.features?.[0];
     if (feature?.id !== undefined && feature.id !== hoveredFeatureId.current) {
       // Clear previous
@@ -220,7 +220,7 @@ export const AtlasMap = forwardRef<AtlasMapHandle, AtlasMapProps>(function Atlas
 
   const handleMouseLeave = useCallback(() => {
     const map = mapRef.current?.getMap();
-    if (!map || hoveredFeatureId.current === null) return;
+    if (!map || hoveredFeatureId.current === null || !map.getSource("atlas-country-boundaries")) return;
     map.setFeatureState(
       { source: "atlas-country-boundaries", id: hoveredFeatureId.current },
       { hover: false },

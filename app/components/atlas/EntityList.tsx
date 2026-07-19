@@ -57,7 +57,7 @@ export function EntityList({ title, entities, emptyHint, isLoading, onSelect }: 
     );
   }
 
-  if (entities.length === 0) {
+  if (!isLoading && entities.length === 0) {
     if (!emptyHint) return null;
     return (
       <section className="mt-4.5">
@@ -98,7 +98,7 @@ export function EntityList({ title, entities, emptyHint, isLoading, onSelect }: 
               >
                 <button
                   type="button"
-                  className="w-full flex items-center gap-3 px-1 py-2 border-0 border-b border-line bg-transparent text-left transition-all duration-160 ease hover:bg-paper/70 hover:rounded-theme hover:translate-x-0.5 cursor-pointer"
+                  className="w-full flex items-center gap-3 px-1.5 py-2 border-0 border-b border-line bg-transparent text-left transition-all duration-160 ease hover:bg-paper/70 hover:rounded-theme hover:translate-x-1 hover:translate-y-0! cursor-pointer"
                   onClick={() => onSelect?.(entity)}
                 >
                   {entity.imageUrl ? (

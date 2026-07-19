@@ -27,6 +27,10 @@ type PlacePanelProps = {
   countryName?: string;
   panelState: "entering" | "open" | "exiting";
   isBackground?: boolean;
+  /** Per-section loading flags — skeleton stays until that specific source settles */
+  loadingPeople?: boolean;
+  loadingEvents?: boolean;
+  loadingRelated?: boolean;
   onBack: () => void;
   onClose: () => void;
   onSelectEntity: (entity: HistoryEntity) => void;
@@ -43,6 +47,9 @@ export function PlacePanel({
   countryName,
   panelState,
   isBackground = false,
+  loadingPeople = false,
+  loadingEvents = false,
+  loadingRelated = false,
   onBack,
   onClose,
   onSelectEntity,
@@ -124,7 +131,7 @@ export function PlacePanel({
           </p>
         ) : null}
 
-        <div className="grid grid-cols-2 gap-3 py-3.5 border-t border-b border-line bg-gold/[0.01]">
+        <div className="grid grid-cols-2 gap-3 py-3.5 border-t border-b border-line bg-gold/1">
           <div className="flex items-start gap-2">
             <MapPin className="w-4 h-4 text-gold/60 mt-0.5 shrink-0" />
             <div>
@@ -154,7 +161,7 @@ export function PlacePanel({
           title="People connected here"
           entities={people}
           emptyHint="No people linked to this place in public sources."
-          isLoading={status === "loading"}
+          isLoading={loadingPeople}
           onSelect={onSelectEntity}
         />
 
@@ -162,14 +169,14 @@ export function PlacePanel({
           title="Events at this place"
           entities={events}
           emptyHint="No dated events found for this site yet."
-          isLoading={status === "loading"}
+          isLoading={loadingEvents}
           onSelect={onSelectEntity}
         />
 
         <EntityList
           title="Nearby & related places"
           entities={relatedPlaces}
-          isLoading={status === "loading"}
+          isLoading={loadingRelated}
           onSelect={(entity) => {
             if (entity.latitude != null && entity.longitude != null && onSelectRelatedPlace) {
               onSelectRelatedPlace(entity);
@@ -209,7 +216,7 @@ export function PlacePanel({
         initial="initial"
         animate="animate"
         exit="exit"
-        className={`hidden md:block absolute z-[22] top-[calc(var(--topbar-h)+28px)] right-7 w-[var(--panel-w)] max-h-[calc(100vh-var(--topbar-h)-100px)] max-h-[calc(100dvh-var(--topbar-h)-100px)] overflow-y-auto custom-scrollbar p-[22px_24px_28px] border border-line bg-paper/94 shadow-[-14px_18px_48px_rgba(42,52,36,0.24)] backdrop-blur-xl overscroll-contain rounded-none ${isBackground ? "panel-background" : ""}`}
+        className={`hidden md:block absolute z-[22] top-[calc(var(--topbar-h)+28px)] right-7 w-[var(--panel-w)] max-h-[calc(100vh-var(--topbar-h)-100px)] max-h-[calc(100dvh-var(--topbar-h)-100px)] overflow-y-auto custom-scrollbar p-[22px_24px_28px] border border-line bg-paper/94 shadow-[-14px_18px_48px_rgba(42,52,36,0.24)] backdrop-blur-xl overscroll-contain rounded-theme ${isBackground ? "panel-background" : ""}`}
         aria-live="polite"
         aria-label={`${place.title} details`}
       >
@@ -272,7 +279,7 @@ export function PlacePanel({
           </p>
         ) : null}
 
-        <div className="grid grid-cols-2 gap-3 py-3.5 border-t border-b border-line bg-gold/[0.01]">
+        <div className="grid grid-cols-2 gap-3 py-3.5 border-t border-b border-line bg-gold/1">
           <div className="flex items-start gap-2">
             <MapPin className="w-4 h-4 text-gold/60 mt-0.5 shrink-0" />
             <div>
@@ -302,7 +309,7 @@ export function PlacePanel({
           title="People connected here"
           entities={people}
           emptyHint="No people linked to this place in public sources."
-          isLoading={status === "loading"}
+          isLoading={loadingPeople}
           onSelect={onSelectEntity}
         />
 
@@ -310,14 +317,14 @@ export function PlacePanel({
           title="Events at this place"
           entities={events}
           emptyHint="No dated events found for this site yet."
-          isLoading={status === "loading"}
+          isLoading={loadingEvents}
           onSelect={onSelectEntity}
         />
 
         <EntityList
           title="Nearby & related places"
           entities={relatedPlaces}
-          isLoading={status === "loading"}
+          isLoading={loadingRelated}
           onSelect={(entity) => {
             if (entity.latitude != null && entity.longitude != null && onSelectRelatedPlace) {
               onSelectRelatedPlace(entity);

@@ -151,14 +151,14 @@ export function EntityDetailPanel({
         initial="initial"
         animate="animate"
         exit="exit"
-        className="hidden md:block absolute z-24 top-[calc(var(--topbar-h)+14px)] right-4 w-(--panel-w) max-h-[calc(100vh-var(--topbar-h)-100px)] max-h-[calc(100dvh-var(--topbar-h)-100px)] overflow-y-auto custom-scrollbar p-[22px_24px_28px] border border-line bg-paper/94 shadow-[-10px_12px_36px_rgba(52,65,42,0.16)] backdrop-blur-xl overscroll-contain rounded-none"
+        className="hidden md:block absolute z-24 top-[calc(var(--topbar-h)+14px)] right-4 w-(--panel-w) max-h-[calc(100vh-var(--topbar-h)-100px)] max-h-[calc(100dvh-var(--topbar-h)-100px)] overflow-y-auto custom-scrollbar p-[22px_24px_28px] border border-line bg-paper/94 shadow-[-10px_12px_36px_rgba(52,65,42,0.16)] backdrop-blur-xl overscroll-contain rounded-theme"
         aria-live="polite"
         aria-label={`${entity.label} details`}
       >
         <div className="flex justify-between items-center text-muted text-[10px] font-bold tracking-[0.14em] uppercase mb-4 font-ui">
           <button
             type="button"
-            className="group inline-flex items-center gap-1.5 border-0 bg-transparent text-gold text-[11px] font-bold tracking-[0.08em] uppercase px-2 py-1 cursor-pointer transition-colors hover:text-gold/80"
+            className="group inline-flex items-center gap-1.5 border-0 bg-transparent text-gold text-[11px] font-bold tracking-[0.08em] uppercase py-1 cursor-pointer transition-colors hover:text-gold/80 px-2"
             onClick={onBack}
           >
             <ArrowLeft className="w-3.5 h-3.5 transition-transform duration-200 group-hover:-translate-x-0.5" />

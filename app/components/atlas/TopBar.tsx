@@ -56,11 +56,11 @@ export function TopBar({ theme, onThemeChange, onHome, depth, label }: TopBarPro
             <option value="modern">Modern</option>
           </select>
         </label>
-        {depth !== "world" ? (
+        {/* {depth !== "world" ? (
           <button className="border border-ink rounded-full! py-1.5 px-2 bg-ink text-paper text-xs font-bold cursor-pointer hover:opacity-90 transition-opacity flex items-center font-ui" type="button" onClick={onHome}>
             Zoom out <span className="ml-2 text-gold">↖</span>
           </button>
-        ) : null}
+        ) : null} */}
       </div>
     </header>
   );

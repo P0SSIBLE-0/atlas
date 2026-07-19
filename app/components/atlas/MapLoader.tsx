@@ -12,7 +12,7 @@ export function MapLoader() {
       className="fixed inset-0 z-200 bg-paper-deep flex flex-col items-center justify-center text-ink select-none pointer-events-auto"
     >
       {/* Centered Glassmorphic Loading Card */}
-      <div className="flex flex-col items-center p-8 bg-paper/70 border border-line backdrop-blur-md rounded-[16px] shadow-[0_16px_48px_rgba(0,0,0,0.12)] max-w-xs w-full text-center">
+      <div className="flex flex-col items-center p-8 bg-paper/70 border border-line backdrop-blur-md rounded-[12px] shadow-[0_16px_48px_rgba(0,0,0,0.12)] max-w-xs w-full text-center">
         {/* Animated Double-Ring Compass Spinner */}
         <div className="relative w-18 h-18 mb-5 flex items-center justify-center">
           {/* Inner Rotating Compass Icon */}

@@ -1,0 +1,202 @@
+.theme-minimal {
+  --color-paper: #f8f9f8;
+  --color-paper-deep: #edf0ee;
+  --color-ink: #18271f;
+  --color-muted: #64736b;
+  --color-gold: #0d9488;
+  --color-map: #c8dfdb;
+  --color-water: #8cbfc0;
+  --color-line: rgba(24, 39, 31, 0.08);
+
+  --font-logo-val: var(--font-manrope), sans-serif;
+  --font-heading-val: var(--font-geist), sans-serif;
+  --font-section-val: var(--font-geist), sans-serif;
+  --font-body-val: var(--font-inter), sans-serif;
+  --font-dates-val: var(--font-ibm-plex-mono), monospace;
+  --font-ui-val: var(--font-inter), sans-serif;
+  --radius-theme: 4px;
+}
+
+/* ——— Minimal Theme Panel Overrides ——— */
+.theme-minimal header,
+.theme-minimal aside,
+.theme-minimal .mobile-drawer-sheet {
+  @apply bg-paper/92 border border-line backdrop-blur-lg rounded-theme;
+  backdrop-filter: blur(18px) saturate(1.6) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.6) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.85) inset,
+    0 8px 32px rgba(24, 55, 48, 0.10),
+    0 1px 4px rgba(24, 55, 48, 0.06) !important;
+}
+
+.theme-minimal header {
+  @apply rounded-full bg-paper/78 border border-teal-600/15;
+}
+
+.theme-minimal .mobile-drawer-sheet>div {
+  @apply bg-transparent border-b border-line;
+}
+
+.theme-minimal button,
+.theme-minimal select {
+  @apply rounded-theme;
+}
+
+.theme-minimal a.group {
+  @apply border border-teal-600/35 bg-teal-600/5 text-teal-600 rounded-full px-4 py-2 font-semibold tracking-wide shadow-xs;
+}
+
+.theme-minimal a.group:hover {
+  @apply bg-teal-600/12 border-teal-600;
+}
+
+.theme-minimal .custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-teal-600/25;
+}
+
+.theme-minimal .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  @apply bg-teal-600/45;
+}
+
+/* Ensure close/utility round buttons do not get the boxy radius override */
+.theme-minimal button[class*="rounded-full"],
+.theme-minimal button[aria-label*="lose"],
+.theme-minimal button[aria-label*="Close"] {
+  @apply rounded-full;
+}
+
+/* Minimal Theme Map Marker Styling */
+.theme-minimal .map-place-marker {
+  @apply flex flex-col-reverse items-center gap-1 bg-transparent border-0 p-0 cursor-pointer outline-none relative;
+}
+
+.theme-minimal .marker-pin {
+  @apply w-2.5 h-2.5 bg-white border-2 border-teal-600 rounded-full inline-block relative shadow-xs transition-all duration-200 ease-out;
+}
+
+.theme-minimal .marker-pin::after {
+  @apply content-[''] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-0.75 h-0.75 bg-teal-600 rounded-full transition-all duration-200 ease-out;
+}
+
+/* Selected marker state in minimal theme */
+.theme-minimal .map-place-marker.is-selected .marker-pin {
+  @apply scale-110 border-teal-600 bg-teal-600;
+  animation: minimal-marker-pulse 1.8s infinite !important;
+}
+
+.theme-minimal .map-place-marker.is-selected .marker-pin::after {
+  @apply bg-white w-0.5 h-0.5;
+}
+
+.theme-minimal .map-place-marker b {
+  @apply font-ui text-[11px] font-medium text-ink bg-paper/95 border border-line px-2 py-0.75 rounded-theme shadow-md whitespace-nowrap pointer-events-auto transition-all duration-200;
+}
+
+.theme-minimal .map-place-marker.is-selected b {
+  @apply bg-ink text-paper border-ink shadow-lg;
+}
+
+@keyframes minimal-marker-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(13, 148, 136, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(13, 148, 136, 0);
+  }
+}
+
+/* Minimal Country Panel Info Grid Overrides */
+.theme-minimal aside .grid-cols-2 > div,
+.theme-minimal .mobile-drawer-sheet .grid-cols-2 > div {
+  @apply bg-transparent border-b border-line/75 rounded-none py-2 px-0 shadow-none gap-2;
+  border-width: 0 0 1px 0 !important;
+}
+
+.theme-minimal aside .grid-cols-2,
+.theme-minimal .mobile-drawer-sheet .grid-cols-2 {
+  @apply gap-x-4 gap-y-0 my-4 mb-6;
+}
+
+.theme-minimal aside .grid-cols-2 span,
+.theme-minimal .mobile-drawer-sheet .grid-cols-2 span {
+  @apply text-muted font-medium tracking-wide;
+}
+
+.theme-minimal aside .grid-cols-2 b,
+.theme-minimal .mobile-drawer-sheet .grid-cols-2 b {
+  @apply font-medium text-ink;
+}
+
+.theme-minimal aside .grid-cols-2 svg,
+.theme-minimal .mobile-drawer-sheet .grid-cols-2 svg {
+  @apply text-teal-600 w-3.5 h-3.5 mt-1;
+}
+
+/* Pill-Style Badge tags (Currencies & Timezones) */
+.theme-minimal aside span[class*="border-line"],
+.theme-minimal .mobile-drawer-sheet span[class*="border-line"] {
+  @apply bg-teal-600/5 border border-teal-600/15 text-teal-600 font-medium rounded-full py-0.75 px-2.5;
+}
+
+/* Minimal List Section Headers */
+.theme-minimal section {
+  @apply mt-6;
+}
+
+.theme-minimal section .font-section {
+  @apply text-[10px] tracking-widest text-muted border-b border-line pb-1.5 mb-2;
+}
+
+.theme-minimal section .font-section small {
+  @apply text-teal-600 bg-teal-600/8 px-1.5 py-0.5 rounded-full font-dates;
+}
+
+/* Minimal Entity Lists & Rounded Avatars */
+.theme-minimal .list-none button {
+  @apply border-b border-line/50 py-2.5 px-1 transition-all duration-200 ease-in-out;
+}
+
+.theme-minimal .list-none button:hover {
+  @apply bg-teal-600/4 pl-2 rounded-theme border-b-transparent;
+}
+
+.theme-minimal .list-none span.rounded-full {
+  @apply bg-teal-600/6 border border-teal-600/18 text-teal-600 text-[11px];
+}
+
+.theme-minimal img.size-9 {
+  @apply border border-line rounded-full;
+}
+
+/* Minimal History Timeline Overrides */
+.theme-minimal ol.list-none {
+  @apply border-l border-teal-600/20;
+  border-left-width: 1px !important;
+}
+
+.theme-minimal ol.list-none button::before {
+  @apply w-2 h-2 bg-white border-2 border-teal-600 rounded-full shadow-none;
+  left: -4.5px !important;
+}
+
+.theme-minimal ol.list-none button:hover::before {
+  @apply bg-teal-600 scale-110;
+}
+
+.theme-minimal ol.list-none button span.text-gold {
+  @apply text-teal-600 font-dates font-semibold;
+}
+
+/* Minimal: frosted glass timeline dock panel */
+.theme-minimal .timeline-dock {
+  @apply bg-paper/82 border border-line rounded-theme;
+  backdrop-filter: blur(18px) saturate(1.6) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.6) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.85) inset,
+    0 8px 32px rgba(24, 55, 48, 0.10) !important;
+}

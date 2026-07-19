@@ -21,7 +21,7 @@ export function HistoryTimeline({ entries, onSelect }: HistoryTimelineProps) {
           <li key={entry.id}>
             <button
               type="button"
-              className="w-full grid grid-cols-[72px_1fr] gap-2.5  py-2 pl-3 border-0 bg-transparent text-left relative cursor-pointer group before:content-[''] before:absolute before:left-[-5px] before:top-3.5 before:w-2 before:h-2 before:rounded-full before:bg-gold before:shadow-[0_0_0_3px_var(--paper)]"
+              className="w-full grid grid-cols-[72px_1fr] gap-2.5  py-2 pl-3 border-0 bg-transparent text-left relative cursor-pointer group before:content-[''] before:absolute before:left-[-5px] before:top-3 before:w-2 before:h-2 before:rounded-full before:bg-gold before:shadow-[0_0_0_3px_var(--paper)]"
               onClick={() => onSelect?.(entry)}
             >
               <span className="text-gold font-bold text-[10px] leading-[1.3] font-dates tracking-[0.04em]">{entry.year}</span>

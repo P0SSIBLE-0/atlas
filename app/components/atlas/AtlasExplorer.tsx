@@ -5,7 +5,7 @@ import { AnimatePresence } from "motion/react";
 import {
   getEntityDetails,
   loadCountryDossierProgressive,
-  loadPlaceDossier,
+  loadPlaceDossierProgressive,
 } from "../../lib/historic-api";
 import { filterEntitiesByYear, yearFromTimeline } from "../../lib/timeline";
 import type {
@@ -54,9 +54,25 @@ export default function AtlasExplorer() {
   const [entityStatus, setEntityStatus] = useState<LoadStatus>("idle");
   const [entityReturnDepth, setEntityReturnDepth] = useState<"country" | "place">("country");
 
+  // Per-section loading flags for country panel
+  const [countryLoadingPlaces, setCountryLoadingPlaces] = useState(false);
+  const [countryLoadingPeople, setCountryLoadingPeople] = useState(false);
+  const [countryLoadingEvents, setCountryLoadingEvents] = useState(false);
+  const [countryLoadingEmpires, setCountryLoadingEmpires] = useState(false);
+
+  // Per-section loading flags for place panel
+  const [placeLoadingPeople, setPlaceLoadingPeople] = useState(false);
+  const [placeLoadingEvents, setPlaceLoadingEvents] = useState(false);
+  const [placeLoadingRelated, setPlaceLoadingRelated] = useState(false);
+
   const [yearIndex, setYearIndex] = useState(4);
   const [activeMomentId, setActiveMomentId] = useState<string | null>(null);
   const [mapLoading, setMapLoading] = useState(true);
+
+  useEffect(() => {
+    document.body.classList.remove("theme-vintage", "theme-minimal", "theme-modern");
+    document.body.classList.add(`theme-${theme}`);
+  }, [theme]);
 
   const resetCountryData = () => {
     setMeta(null);
@@ -67,12 +83,19 @@ export default function AtlasExplorer() {
     setEmpires([]);
     setTimeline([]);
     setCountryStatus("idle");
+    setCountryLoadingPlaces(false);
+    setCountryLoadingPeople(false);
+    setCountryLoadingEvents(false);
+    setCountryLoadingEmpires(false);
     setSelectedPlace(null);
     setPlacePeople([]);
     setPlaceEvents([]);
     setRelatedPlaces([]);
     setPlaceTimeline([]);
     setPlaceStatus("idle");
+    setPlaceLoadingPeople(false);
+    setPlaceLoadingEvents(false);
+    setPlaceLoadingRelated(false);
     setSelectedEntity(null);
     setEntityStatus("idle");
     setActiveMomentId(null);
@@ -95,7 +118,17 @@ export default function AtlasExplorer() {
       setEvents(dossier.events);
       setEmpires(dossier.empires);
       setTimeline(dossier.timeline);
+      // Clear per-section loading as data arrives — each section independently
+      if (dossier.places.length > 0) setCountryLoadingPlaces(false);
+      if (dossier.people.length > 0) setCountryLoadingPeople(false);
+      if (dossier.events.length > 0) setCountryLoadingEvents(false);
+      if (dossier.empires.length > 0) setCountryLoadingEmpires(false);
       if (ready) {
+        // Final — clear any still-loading sections (they had no data)
+        setCountryLoadingPlaces(false);
+        setCountryLoadingPeople(false);
+        setCountryLoadingEvents(false);
+        setCountryLoadingEmpires(false);
         setCountryStatus(
           dossier.record || dossier.meta || dossier.places.length ? "ready" : "unavailable",
         );
@@ -103,7 +136,7 @@ export default function AtlasExplorer() {
           setYearIndex(Math.min(4, dossier.timeline.length - 1));
         }
       } else {
-        // Core arrived — keep status as loading so lists show skeletons
+        // Core arrived — keep status as loading so overall panel stays in loading state
         setCountryStatus("loading");
       }
     },
@@ -136,6 +169,11 @@ export default function AtlasExplorer() {
     setActiveMomentId(null);
     setYearIndex(4);
     setCountryStatus("loading");
+    // All sections start as loading
+    setCountryLoadingPlaces(true);
+    setCountryLoadingPeople(true);
+    setCountryLoadingEvents(true);
+    setCountryLoadingEmpires(true);
 
     if (pick.bounds) {
       mapHandle.current?.flyToBounds(pick.bounds);
@@ -300,27 +338,62 @@ export default function AtlasExplorer() {
     return () => controller.abort();
   }, [applyCountryDossier, countryCenter, countryName, depth]);
 
-  // Place dossier
   useEffect(() => {
     if (!selectedPlace) return;
     const seed = selectedPlace;
     const controller = new AbortController();
 
-    loadPlaceDossier(seed, controller.signal)
-      .then((dossier) => {
+    // All place sections start loading
+    setPlaceLoadingPeople(true);
+    setPlaceLoadingEvents(true);
+    setPlaceLoadingRelated(true);
+
+    loadPlaceDossierProgressive(
+      seed,
+      controller.signal,
+      (dossier) => {
         if (controller.signal.aborted) return;
         setSelectedPlace(dossier.place);
         setPlacePeople(dossier.people);
         setPlaceEvents(dossier.events);
         setRelatedPlaces(dossier.relatedPlaces);
         setPlaceTimeline(dossier.timeline);
-        setPlaceStatus("ready");
+        // Clear per-section loading as data arrives
+        if (dossier.people.length > 0) setPlaceLoadingPeople(false);
+        if (dossier.events.length > 0) setPlaceLoadingEvents(false);
+        if (dossier.relatedPlaces.length > 0) setPlaceLoadingRelated(false);
+        // Show panel as soon as any section has content
+        setPlaceStatus((prev) =>
+          prev === "loading" && (
+            dossier.people.length > 0 ||
+            dossier.events.length > 0 ||
+            dossier.relatedPlaces.length > 0
+          ) ? "ready" : prev,
+        );
         if (dossier.timeline.length > 0) {
-          setYearIndex(Math.min(yearIndex, dossier.timeline.length - 1));
+          setYearIndex((prev) => Math.min(prev, dossier.timeline.length - 1));
         }
+      },
+    )
+      .then((dossier) => {
+        if (controller.signal.aborted) return;
+        // Final — clear any sections still marked loading (they had no data)
+        setPlaceLoadingPeople(false);
+        setPlaceLoadingEvents(false);
+        setPlaceLoadingRelated(false);
+        setPlaceStatus(
+          dossier.people.length > 0 || dossier.events.length > 0 || dossier.relatedPlaces.length > 0
+            ? "ready"
+            : "unavailable",
+        );
       })
       .catch(() => {
-        if (!controller.signal.aborted) setPlaceStatus("unavailable");
+        if (!controller.signal.aborted) {
+          setPlaceLoadingPeople(false);
+          setPlaceLoadingEvents(false);
+          setPlaceLoadingRelated(false);
+          setPlaceStatus("unavailable");
+        }
       });
 
     return () => controller.abort();
@@ -433,7 +506,7 @@ export default function AtlasExplorer() {
 
         <AnimatePresence>
           {showCountryPanel && countryName && (
-            <CountryPanel
+          <CountryPanel
               countryName={countryName}
               status={countryStatus}
               meta={meta}
@@ -445,6 +518,10 @@ export default function AtlasExplorer() {
               timeline={timeline}
               panelState="open"
               isBackground={selectedPlace !== null || selectedEntity !== null}
+              loadingPlaces={countryLoadingPlaces}
+              loadingPeople={countryLoadingPeople}
+              loadingEvents={countryLoadingEvents}
+              loadingEmpires={countryLoadingEmpires}
               onClose={closeCountry}
               onSelectPlace={handlePlaceSelect}
               onSelectEntity={(entity) => handleEntitySelect(entity, "country")}
@@ -454,7 +531,7 @@ export default function AtlasExplorer() {
 
         <AnimatePresence>
           {showPlacePanel && selectedPlace && (
-            <PlacePanel
+          <PlacePanel
               place={selectedPlace}
               status={placeStatus}
               people={filteredPlacePeople}
@@ -464,6 +541,9 @@ export default function AtlasExplorer() {
               countryName={meta?.name ?? countryName ?? undefined}
               panelState="open"
               isBackground={selectedEntity !== null}
+              loadingPeople={placeLoadingPeople}
+              loadingEvents={placeLoadingEvents}
+              loadingRelated={placeLoadingRelated}
               onBack={backToCountry}
               onClose={closeCountry}
               onSelectEntity={(entity) => handleEntitySelect(entity, "place")}

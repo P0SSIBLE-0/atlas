@@ -37,6 +37,11 @@ type CountryPanelProps = {
   timeline: TimelineEntry[];
   panelState: "entering" | "open" | "exiting";
   isBackground?: boolean;
+  /** Per-section loading flags — skeleton stays until that specific source settles */
+  loadingPlaces?: boolean;
+  loadingPeople?: boolean;
+  loadingEvents?: boolean;
+  loadingEmpires?: boolean;
   onClose: () => void;
   onSelectPlace: (place: AtlasPlace) => void;
   onSelectEntity: (entity: HistoryEntity) => void;
@@ -54,6 +59,10 @@ export function CountryPanel({
   timeline,
   panelState,
   isBackground = false,
+  loadingPlaces = false,
+  loadingPeople = false,
+  loadingEvents = false,
+  loadingEmpires = false,
   onClose,
   onSelectPlace,
   onSelectEntity,
@@ -106,7 +115,7 @@ export function CountryPanel({
       opacity: 0,
       x: 30,
       y: 10,
-      scale: 0.98,
+      scale: 0.68,
       transition: {
         duration: 0.22,
         ease: "easeInOut",
@@ -206,7 +215,7 @@ export function CountryPanel({
           title="Famous places"
           entities={placeEntities}
           emptyHint="No mapped places yet — try another country."
-          isLoading={status === "loading"}
+          isLoading={loadingPlaces}
           onSelect={(entity) => {
             const place = places.find((item) => item.id === entity.id);
             if (place) onSelectPlace(place);
@@ -218,7 +227,7 @@ export function CountryPanel({
           title="People of history"
           entities={people}
           emptyHint="No notable people returned from public sources."
-          isLoading={status === "loading"}
+          isLoading={loadingPeople}
           onSelect={onSelectEntity}
         />
 
@@ -226,14 +235,14 @@ export function CountryPanel({
           title="Events"
           entities={events}
           emptyHint="No major events found for this country yet."
-          isLoading={status === "loading"}
+          isLoading={loadingEvents}
           onSelect={onSelectEntity}
         />
 
         <EntityList
           title="Empires & dynasties"
           entities={empires}
-          isLoading={status === "loading"}
+          isLoading={loadingEmpires}
           onSelect={onSelectEntity}
         />
 
@@ -269,7 +278,7 @@ export function CountryPanel({
         initial="initial"
         animate="animate"
         exit="exit"
-        className={`hidden md:block absolute z-18 top-[calc(var(--topbar-h)+14px)] right-4 w-[var(--panel-w)] max-h-[calc(100vh-var(--topbar-h)-100px)] max-h-[calc(100dvh-var(--topbar-h)-100px)] overflow-y-auto custom-scrollbar p-[22px_24px_28px] border border-line bg-paper/94 shadow-[-10px_12px_36px_rgba(52,65,42,0.16)] backdrop-blur-xl overscroll-contain rounded-none ${isBackground ? "panel-background" : ""}`}
+        className={`hidden md:block absolute z-18 top-[calc(var(--topbar-h)+14px)] right-4 w-[var(--panel-w)] max-h-[calc(100vh-var(--topbar-h)-100px)] max-h-[calc(100dvh-var(--topbar-h)-100px)] overflow-y-auto custom-scrollbar p-[22px_24px_28px] border border-line bg-paper/94 shadow-[-10px_12px_36px_rgba(52,65,42,0.16)] backdrop-blur-xl overscroll-contain rounded-theme ${isBackground ? "panel-background" : ""}`}
         aria-live="polite"
         aria-label={`${countryName} details`}
       >
@@ -336,28 +345,28 @@ export function CountryPanel({
 
         {meta ? (
           <div className="grid grid-cols-2 gap-2.5 my-3 mb-4">
-            <div className="flex items-start gap-2.5 p-[10px_12px] border border-line bg-gold/[0.01] rounded-theme font-ui">
+            <div className="flex items-start gap-2.5 p-[10px_12px] border border-line bg-gold/1 rounded-theme font-ui">
               <Users className="w-4 h-4 text-gold/60 mt-0.5 shrink-0" />
               <div>
                 <span className="block text-muted text-[9px] tracking-[0.12em] uppercase">Population</span>
                 <b className="block mt-0.5 font-dates text-sm text-ink">{formatPopulation(meta.population)}</b>
               </div>
             </div>
-            <div className="flex items-start gap-2.5 p-[10px_12px] border border-line bg-gold/[0.01] rounded-theme font-ui">
+            <div className="flex items-start gap-2.5 p-[10px_12px] border border-line bg-gold/1 rounded-theme font-ui">
               <Expand className="w-4 h-4 text-gold/60 mt-0.5 shrink-0" />
               <div>
                 <span className="block text-muted text-[9px] tracking-[0.12em] uppercase">Area</span>
                 <b className="block mt-0.5 font-dates text-sm text-ink">{formatArea(meta.area)}</b>
               </div>
             </div>
-            <div className="flex items-start gap-2.5 p-[10px_12px] border border-line bg-gold/[0.01] rounded-theme font-ui">
+            <div className="flex items-start gap-2.5 p-[10px_12px] border border-line bg-gold/1 rounded-theme font-ui">
               <Map className="w-4 h-4 text-gold/60 mt-0.5 shrink-0" />
               <div>
                 <span className="block text-muted text-[9px] tracking-[0.12em] uppercase">Region</span>
                 <b className="block mt-0.5 font-body text-sm text-ink">{meta.region ?? "—"}</b>
               </div>
             </div>
-            <div className="flex items-start gap-2.5 p-[10px_12px] border border-line bg-gold/[0.01] rounded-theme font-ui">
+            <div className="flex items-start gap-2.5 p-[10px_12px] border border-line bg-gold/1 rounded-theme font-ui">
               <Languages className="w-4 h-4 text-gold/60 mt-0.5 shrink-0" />
               <div>
                 <span className="block text-muted text-[9px] tracking-[0.12em] uppercase">Languages</span>
@@ -370,12 +379,12 @@ export function CountryPanel({
         {meta?.currencies?.length ? (
           <div className="flex flex-wrap gap-1.5 mb-3.5">
             {meta.currencies.slice(0, 3).map((currency) => (
-              <span className="py-1 px-2 border border-line text-muted text-[10px] tracking-[0.03em] bg-gold/[0.01] rounded-theme font-ui" key={currency}>
+              <span className="py-1 px-2 border border-line text-muted text-[10px] tracking-[0.03em] bg-gold/1 rounded-theme font-ui" key={currency}>
                 {currency}
               </span>
             ))}
             {meta.timezones?.slice(0, 2).map((tz) => (
-              <span className="py-1 px-2 border border-line text-muted text-[10px] tracking-[0.03em] bg-gold/[0.01] rounded-theme font-ui" key={tz}>
+              <span className="py-1 px-2 border border-line text-muted text-[10px] tracking-[0.03em] bg-gold/1 rounded-theme font-ui" key={tz}>
                 {tz}
               </span>
             ))}
@@ -386,7 +395,7 @@ export function CountryPanel({
           title="Famous places"
           entities={placeEntities}
           emptyHint="No mapped places yet — try another country."
-          isLoading={status === "loading"}
+          isLoading={loadingPlaces}
           onSelect={(entity) => {
             const place = places.find((item) => item.id === entity.id);
             if (place) onSelectPlace(place);
@@ -398,7 +407,7 @@ export function CountryPanel({
           title="People of history"
           entities={people}
           emptyHint="No notable people returned from public sources."
-          isLoading={status === "loading"}
+          isLoading={loadingPeople}
           onSelect={onSelectEntity}
         />
 
@@ -406,14 +415,14 @@ export function CountryPanel({
           title="Events"
           entities={events}
           emptyHint="No major events found for this country yet."
-          isLoading={status === "loading"}
+          isLoading={loadingEvents}
           onSelect={onSelectEntity}
         />
 
         <EntityList
           title="Empires & dynasties"
           entities={empires}
-          isLoading={status === "loading"}
+          isLoading={loadingEmpires}
           onSelect={onSelectEntity}
         />
 
